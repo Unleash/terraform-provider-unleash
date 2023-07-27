@@ -6,11 +6,11 @@ import (
 	"net/http/httputil"
 )
 
-func debugHTTPClient() *http.Client {
+func httpClient(debug bool) *http.Client {
 	return &http.Client{
 		Transport: &debugTransport{
 			Transport:   http.DefaultTransport,
-			EnableDebug: true,
+			EnableDebug: debug,
 		},
 	}
 }

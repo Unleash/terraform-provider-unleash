@@ -44,11 +44,11 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"base_url": schema.StringAttribute{
 				MarkdownDescription: "Unleash base URL (everything before `/api`)",
-				Optional:            false,
+				Required:            true,
 			},
 			"authorization": schema.StringAttribute{
 				MarkdownDescription: "Authhorization token for Unleash API",
-				Optional:            false,
+				Required:            true,
 			},
 		},
 		Description: "Interface with Unleash server API.",
@@ -69,13 +69,14 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 	tflog.Info(ctx, "Configuring Unleash client", structs.Map(data))
 	configuration := unleash.NewConfiguration()
 	configuration.Servers = unleash.ServerConfigurations{
-		{
-			URL: data.BaseUrl.String(),
+		unleash.ServerConfiguration{
+			URL:         data.BaseUrl.String(),
+			Description: "Unleash server",
 		},
 	}
 	configuration.AddDefaultHeader("Authorization", data.Authorization.String())
 
-	configuration.HTTPClient = debugHTTPClient()
+	configuration.HTTPClient = httpClient(p.version == "dev" || p.version == "test")
 	client := unleash.NewAPIClient(configuration)
 
 	// Make the Inventory client available during DataSource and Resource
