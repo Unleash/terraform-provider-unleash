@@ -5,20 +5,23 @@ package provider
 
 import (
 	"context"
-	"net/http"
 
+	unleash "github.com/Unleash/unleash-server-api-go/client"
+
+	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
-var _ provider.Provider = &ScaffoldingProvider{}
+var _ provider.Provider = &UnleashProvider{}
 
 // ScaffoldingProvider defines the provider implementation.
-type ScaffoldingProvider struct {
+type UnleashProvider struct {
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
@@ -26,28 +29,34 @@ type ScaffoldingProvider struct {
 }
 
 // ScaffoldingProviderModel describes the provider data model.
-type ScaffoldingProviderModel struct {
-	Endpoint types.String `tfsdk:"endpoint"`
+type UnleashConfiguration struct {
+	BaseUrl       types.String `tfsdk:"base_url"`
+	Authorization types.String `tfsdk:"authorization"`
 }
 
-func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "scaffolding"
+func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "unleash"
 	resp.Version = p.version
 }
 
-func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "Example provider attribute",
-				Optional:            true,
+			"base_url": schema.StringAttribute{
+				MarkdownDescription: "Unleash base URL (everything before `/api`)",
+				Optional:            false,
+			},
+			"authorization": schema.StringAttribute{
+				MarkdownDescription: "Authhorization token for Unleash API",
+				Optional:            false,
 			},
 		},
+		Description: "Interface with Unleash server API.",
 	}
 }
 
-func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data ScaffoldingProviderModel
+func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data UnleashConfiguration
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -57,28 +66,42 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 
 	// Configuration values are now available.
 	// if data.Endpoint.IsNull() { /* ... */ }
+	tflog.Info(ctx, "Configuring Unleash client", structs.Map(data))
+	configuration := unleash.NewConfiguration()
+	configuration.Servers = unleash.ServerConfigurations{
+		{
+			URL: data.BaseUrl.String(),
+		},
+	}
+	configuration.AddDefaultHeader("Authorization", data.Authorization.String())
 
-	// Example client configuration for data sources and resources
-	client := http.DefaultClient
+	configuration.HTTPClient = debugHTTPClient()
+	client := unleash.NewAPIClient(configuration)
+
+	// Make the Inventory client available during DataSource and Resource
+	// type Configure methods.
 	resp.DataSourceData = client
 	resp.ResourceData = client
+	tflog.Info(ctx, "Configured Unleash client", map[string]any{"success": true})
 }
 
-func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewExampleResource,
-	}
+func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resource {
+	// return []func() resource.Resource{
+	// 	NewExampleResource,
+	// }
+	return nil
 }
 
-func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		NewExampleDataSource,
-	}
+func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	// return []func() datasource.DataSource{
+	// 	NewExampleDataSource,
+	// }
+	return nil
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &ScaffoldingProvider{
+		return &UnleashProvider{
 			version: version,
 		}
 	}
