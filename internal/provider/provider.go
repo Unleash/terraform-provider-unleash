@@ -67,14 +67,15 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 	// Configuration values are now available.
 	// if data.Endpoint.IsNull() { /* ... */ }
 	tflog.Info(ctx, "Configuring Unleash client", structs.Map(data))
+	tflog.Info(ctx, "Base URL: "+data.BaseUrl.ValueString())
 	configuration := unleash.NewConfiguration()
 	configuration.Servers = unleash.ServerConfigurations{
 		unleash.ServerConfiguration{
-			URL:         data.BaseUrl.String(),
+			URL:         data.BaseUrl.ValueString(),
 			Description: "Unleash server",
 		},
 	}
-	configuration.AddDefaultHeader("Authorization", data.Authorization.String())
+	configuration.AddDefaultHeader("Authorization", data.Authorization.ValueString())
 
 	configuration.HTTPClient = httpClient(p.version == "dev" || p.version == "test")
 	client := unleash.NewAPIClient(configuration)
@@ -94,10 +95,9 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 }
 
 func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	// return []func() datasource.DataSource{
-	// 	NewExampleDataSource,
-	// }
-	return nil
+	return []func() datasource.DataSource{
+		NewUserDataSource,
+	}
 }
 
 func New(version string) func() provider.Provider {

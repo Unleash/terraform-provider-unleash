@@ -15,19 +15,19 @@
 go install
 ```
 
-## Adding Dependencies
+## Running tests
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
-
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
+Run tests
 
 ```shell
-go get github.com/author/dependency
-go mod tidy
+go test -count=1 -v ./...`
 ```
 
-Then commit the changes to `go.mod` and `go.sum`.
+Run acceptance tests which cover the provider and resources code
+
+```shell
+TF_ACC=1 go test -count=1 -v ./...
+```
 
 ## Using the provider
 
