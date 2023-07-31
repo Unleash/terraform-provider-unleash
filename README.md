@@ -29,6 +29,11 @@ Run acceptance tests which cover the provider and resources code
 TF_ACC=1 go test -count=1 -v ./...
 ```
 
+### Before pushing
+
+- `golangci-lint run` to lint the code
+- `go generate ./...` to update docs
+
 ## Using the provider
 
 Fill this in for each provider

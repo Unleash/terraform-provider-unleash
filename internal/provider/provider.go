@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"os"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -44,41 +46,66 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"base_url": schema.StringAttribute{
 				MarkdownDescription: "Unleash base URL (everything before `/api`)",
-				Required:            true,
+				Optional:            true,
 			},
 			"authorization": schema.StringAttribute{
 				MarkdownDescription: "Authhorization token for Unleash API",
-				Required:            true,
+				Optional:            true,
+				Sensitive:           true,
 			},
 		},
 		Description: "Interface with Unleash server API.",
 	}
 }
 
+func configValue(configValue basetypes.StringValue, env string) string {
+	if configValue.IsNull() {
+		return os.Getenv(env)
+	}
+	return configValue.ValueString()
+}
+
+func mustHave(name string, value string, resp *provider.ConfigureResponse) {
+	if value == "" {
+		resp.Diagnostics.AddError(
+			"Unable to find "+name,
+			name+" cannot be an empty string",
+		)
+	}
+}
+
 func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data UnleashConfiguration
+	var config UnleashConfiguration
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	base_url := configValue(config.BaseUrl, "UNLEASH_URL")
+	authorization := configValue(config.Authorization, "AUTH_TOKEN")
+	mustHave("base_url", base_url, resp)
+	mustHave("authorization", authorization, resp)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Configuration values are now available.
 	// if data.Endpoint.IsNull() { /* ... */ }
-	tflog.Info(ctx, "Configuring Unleash client", structs.Map(data))
-	tflog.Info(ctx, "Base URL: "+data.BaseUrl.ValueString())
-	configuration := unleash.NewConfiguration()
-	configuration.Servers = unleash.ServerConfigurations{
+	tflog.Info(ctx, "Configuring Unleash client", structs.Map(config))
+	tflog.Info(ctx, "Base URL: "+base_url)
+	unleashConfig := unleash.NewConfiguration()
+	unleashConfig.Servers = unleash.ServerConfigurations{
 		unleash.ServerConfiguration{
-			URL:         data.BaseUrl.ValueString(),
+			URL:         base_url,
 			Description: "Unleash server",
 		},
 	}
-	configuration.AddDefaultHeader("Authorization", data.Authorization.ValueString())
+	unleashConfig.AddDefaultHeader("Authorization", authorization)
 
-	configuration.HTTPClient = httpClient(p.version == "dev" || p.version == "test")
-	client := unleash.NewAPIClient(configuration)
+	unleashConfig.HTTPClient = httpClient(p.version == "dev" || p.version == "test")
+	client := unleash.NewAPIClient(unleashConfig)
 
 	// Make the Inventory client available during DataSource and Resource
 	// type Configure methods.
@@ -102,8 +129,6 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &UnleashProvider{
-			version: version,
-		}
+		return &UnleashProvider{}
 	}
 }
