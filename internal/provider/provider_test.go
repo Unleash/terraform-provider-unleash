@@ -4,6 +4,9 @@
 package provider
 
 import (
+	"os"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 )
@@ -13,6 +16,7 @@ const (
 		required_providers {
 			unleash = {
 				source = "Unleash/unleash"
+				version = ">= 0.0.1"
 			}
 		}
 	}
@@ -33,8 +37,16 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 	"unleash": providerserver.NewProtocol6WithError(New("test")()),
 }
 
-// func testAccPreCheck(t *testing.T) {
-// You can add code here to run prior to any test case execution, for example assertions
-// about the appropriate environment variables being set are common to see in a pre-check
-// function.
-// }
+func envOrDefault(name string, defaultValue string) {
+	if os.Getenv(name) == "" {
+		os.Setenv(name, defaultValue)
+	}
+}
+
+func testAccPreCheck(t *testing.T) {
+	// You can add code here to run prior to any test case execution, for example assertions
+	// about the appropriate environment variables being set are common to see in a pre-check
+	// function.
+	envOrDefault("UNLEASH_URL", "http://localhost:4242")
+	envOrDefault("AUTH_TOKEN", "*:*.unleash-insecure-admin-api-token")
+}
