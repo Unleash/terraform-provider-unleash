@@ -115,10 +115,9 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 }
 
 func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resource {
-	// return []func() resource.Resource{
-	// 	NewExampleResource,
-	// }
-	return nil
+	return []func() resource.Resource{
+		NewUserResource,
+	}
 }
 
 func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
