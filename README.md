@@ -20,7 +20,7 @@ go install
 Run tests
 
 ```shell
-go test -count=1 -v ./...`
+go test -count=1 -v ./...
 ```
 
 Run acceptance tests which cover the provider and resources code

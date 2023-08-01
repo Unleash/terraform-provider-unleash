@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,12 +30,13 @@ type userResource struct {
 }
 
 type userResourceModel struct {
-	Username  types.String  `tfsdk:"username"`
-	Email     types.String  `tfsdk:"email"`
-	Name      types.String  `tfsdk:"name"`
-	Password  types.String  `tfsdk:"password"`
-	RootRole  types.Float64 `tfsdk:"rootRole"`
-	SendEmail types.Bool    `tfsdk:"sendEmail"`
+	ID        types.String `tfsdk:"id"`
+	Username  types.String `tfsdk:"username"`
+	Email     types.String `tfsdk:"email"`
+	Name      types.String `tfsdk:"name"`
+	Password  types.String `tfsdk:"password"`
+	RootRole  types.Int64  `tfsdk:"root_role"`
+	SendEmail types.Bool   `tfsdk:"send_email"`
 }
 
 // Configure adds the provider configured client to the data source.
@@ -61,6 +64,10 @@ func (d *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Description: "User schema",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "Identifier for this user.",
+				Computed:    true,
+			},
 			"username": schema.StringAttribute{
 				Description: "The username.",
 				Optional:    true,
@@ -104,9 +111,48 @@ func (d *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
+	createUserSchema := *unleash.NewCreateUserSchemaWithDefaults()
+	createUserSchema.Name = state.Name.ValueStringPointer()
+	createUserSchema.Email = state.Email.ValueStringPointer()
+	createUserSchema.Username = state.Username.ValueStringPointer()
+	createUserSchema.RootRole = float32(state.RootRole.ValueInt64())
+	createUserSchema.SendEmail = state.SendEmail.ValueBoolPointer()
+
+	user, api_response, err := d.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserSchema).Execute()
+	fmt.Println("((((((((((==0===0==))))))))))")
+	fmt.Println(structs.Map(user))
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read User",
+			err.Error(),
+		)
+		return
+	}
+
+	if api_response.StatusCode != 201 { // TODO should we have something generic like 2xx?
+		resp.Diagnostics.AddError(
+			"Unexpected HTTP error code received",
+			api_response.Status,
+		)
+		return
+	}
+
+	// Update model with response
+	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
+	state.Email = types.StringValue(*user.Email)
+	state.Username = types.StringValue(*user.Username)
+	state.Name = types.StringValue(*user.Name)
+	state.RootRole = types.Int64Value(int64(*user.RootRole))
+	// TODO note the output state is not the same as input state
+	// here in output state we're saying what happened (i.e. ID is present)
+	// but in the input state we don't know if the email was sent or not
+	// but we do have a SendEmail configuration
+	// In the output we receive if we've sent the email or not
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	tflog.Debug(ctx, "Finished importing user data source", map[string]any{"success": true})
+	tflog.Debug(ctx, "Finished creating user data source", map[string]any{"success": true})
 }
 
 func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
