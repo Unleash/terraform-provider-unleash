@@ -30,7 +30,9 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Make the actual request
 	resp, err := t.Transport.RoundTrip(req)
 
-	fmt.Printf("Err:\n%s\n\n", err)
+	if err != nil {
+		fmt.Printf("Err:\n%s\n\n", err)
+	}
 	if t.EnableDebug && resp != nil {
 		// Log the response details
 		responseDump, _ := httputil.DumpResponse(resp, true)

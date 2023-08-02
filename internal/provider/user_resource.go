@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
-	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -40,7 +39,7 @@ type userResourceModel struct {
 }
 
 // Configure adds the provider configured client to the data source.
-func (d *userResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *userResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -50,17 +49,17 @@ func (d *userResource) Configure(ctx context.Context, req resource.ConfigureRequ
 		tflog.Error(ctx, "Unable to prepare client")
 		return
 	}
-	d.client = client
+	r.client = client
 
 }
 
 // Metadata returns the data source type name.
-func (d *userResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *userResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_user"
 }
 
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
-func (d *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "User schema",
 		Attributes: map[string]schema.Attribute{
@@ -96,7 +95,7 @@ func (d *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 	}
 }
 
-func (d *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import user resource")
 	var state userResourceModel
 
@@ -105,7 +104,7 @@ func (d *userResource) ImportState(ctx context.Context, req resource.ImportState
 	tflog.Debug(ctx, "Finished importing user data source", map[string]any{"success": true})
 }
 
-func (d *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	tflog.Debug(ctx, "Preparing to import user resource")
 	var state userResourceModel
 
@@ -118,9 +117,7 @@ func (d *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createUserSchema.RootRole = float32(state.RootRole.ValueInt64())
 	createUserSchema.SendEmail = state.SendEmail.ValueBoolPointer()
 
-	user, api_response, err := d.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserSchema).Execute()
-	fmt.Println("((((((((((==0===0==))))))))))")
-	fmt.Println(structs.Map(user))
+	user, api_response, err := r.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -130,7 +127,7 @@ func (d *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	if api_response.StatusCode != 201 { // TODO should we have something generic like 2xx?
+	if api_response.StatusCode != 201 { // TODO shfmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)ould we have something generic like 2xx?
 		resp.Diagnostics.AddError(
 			"Unexpected HTTP error code received",
 			api_response.Status,
@@ -162,4 +159,33 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 }
 
 func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	tflog.Debug(ctx, "Preparing to delete user")
+	var state userResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	api_response, err := r.client.UsersApi.DeleteUser(ctx, state.ID.ValueString()).Execute()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read User",
+			err.Error(),
+		)
+		return
+	}
+
+	if api_response.StatusCode != 200 {
+		resp.Diagnostics.AddError(
+			"Unexpected HTTP error code received",
+			api_response.Status,
+		)
+		return
+	}
+
+	resp.State.RemoveResource(ctx)
+	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
 }
