@@ -105,10 +105,10 @@ func (r *userResource) ImportState(ctx context.Context, req resource.ImportState
 }
 
 func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	tflog.Debug(ctx, "Preparing to import user resource")
+	tflog.Debug(ctx, "Preparing to create user resource")
 	var state userResourceModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
 
 	createUserSchema := *unleash.NewCreateUserSchemaWithDefaults()
 	createUserSchema.Name = state.Name.ValueStringPointer()
@@ -153,9 +153,101 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 }
 
 func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	tflog.Debug(ctx, "Preparing to read user resource")
+	var state userResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	user, api_response, err := r.client.UsersApi.GetUser(context.Background(), state.ID.ValueString()).Execute()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Read User %s", state.ID.ValueString()),
+			err.Error(),
+		)
+		return
+	}
+
+	if api_response.StatusCode != 200 {
+		resp.Diagnostics.AddError(
+			"Unexpected HTTP error code received",
+			api_response.Status,
+		)
+		return
+	}
+
+	// Update model with response
+	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
+	state.Email = types.StringValue(*user.Email)
+	state.Username = types.StringValue(*user.Username)
+	state.Name = types.StringValue(*user.Name)
+	state.RootRole = types.Int64Value(int64(*user.RootRole))
+	tflog.Debug(ctx, "Finished populating model", map[string]any{"success": true})
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
 }
 
 func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	tflog.Debug(ctx, "Preparing to update user resource")
+	var state userResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
+
+	// TODO fail if you try to change the username, that's not possible or let the server fail?
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	newRootRole := float32(state.RootRole.ValueInt64())
+	updateUserSchema := *unleash.NewUpdateUserSchemaWithDefaults()
+	updateUserSchema.Name = state.Name.ValueStringPointer()
+	updateUserSchema.Email = state.Email.ValueStringPointer()
+	updateUserSchema.RootRole = &newRootRole
+	requestBody, err := updateUserSchema.ToMap()
+	// handle if error
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read User",
+			err.Error(),
+		)
+		return
+	}
+
+	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
+
+	user, api_response, err := r.client.UsersApi.UpdateUser(context.Background(), state.ID.ValueString()).RequestBody(requestBody).Execute()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read User",
+			err.Error(),
+		)
+		return
+	}
+
+	if api_response.StatusCode != 200 {
+		resp.Diagnostics.AddError(
+			"Unexpected HTTP error code received",
+			api_response.Status,
+		)
+		return
+	}
+
+	// Update model with response
+	state.Email = types.StringValue(*user.Email)
+	state.Username = types.StringValue(*user.Username)
+	state.Name = types.StringValue(*user.Name)
+	state.RootRole = types.Int64Value(int64(*user.RootRole))
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	tflog.Debug(ctx, "Finished updating user data source", map[string]any{"success": true})
 }
 
 func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

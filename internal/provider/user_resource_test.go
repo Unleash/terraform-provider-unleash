@@ -12,27 +12,41 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+func testAccSampleUserResource(name string) string {
+	return fmt.Sprintf(`
+resource "unleash_user" "the_newbie" {
+    username = "test"
+    name = "%s"
+    email = "test@getunleash.io"
+    root_role = "2"
+    send_email = false
+}`, name)
+}
 func TestAccUserResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-					resource "unleash_user" "the_newbie" {
-						username = "test"
-						name = "Test User"
-						email = "test@getunleash.io"
-						root_role = "2"
-						send_email = false
-					}`,
-
+				Config: testAccSampleUserResource("Test User"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Test User"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
+					// TODO test the remote object matches https://developer.hashicorp.com/terraform/plugin/testing/testing-patterns#basic-test-to-verify-attributes
+				),
+			},
+			{
+				Config: testAccSampleUserResource("Renamed user"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Renamed user"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
+				// TODO test the remote object matches https://developer.hashicorp.com/terraform/plugin/testing/testing-patterns#basic-test-to-verify-attributes
 				),
 			},
 		},
