@@ -15,18 +15,26 @@
 go install
 ```
 
-## Running tests
+## Testing
 
-Run tests
+https://developer.hashicorp.com/terraform/plugin/testing
+
+Run tests (most likely we will not have a lot of unit tests but instead we'll have acceptance tests)
 
 ```shell
-go test -count=1 -v ./...`
+go test -count=1 -v ./...
 ```
 
-Run acceptance tests which cover the provider and resources code
+Run **acceptance tests** which cover the provider and resources code
 
 ```shell
-TF_ACC=1 go test -count=1 -v ./...
+TF_LOG=trace TF_ACC=1 go test ./... -v -count=1
+```
+
+or the following make target (although it will cache results if nothing changes)
+
+```shell
+make testacc
 ```
 
 ### Before pushing

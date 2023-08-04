@@ -72,8 +72,9 @@ jobs:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download
-      - run: docker compose up -d --wait -t 60
-      - env:
+      - name: Start Unleash test instance
+        run: docker compose up -d --wait -t 60
+      - run: go test -v -cover ./internal/provider/
+        env:
           TF_ACC: "1"
-        run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
