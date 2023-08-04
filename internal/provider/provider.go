@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"os"
+	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 
@@ -104,7 +105,9 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 	unleashConfig.AddDefaultHeader("Authorization", authorization)
 
-	unleashConfig.HTTPClient = httpClient(p.version == "dev" || p.version == "test")
+	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
+	isDebug := logLevel == "debug" || logLevel == "trace"
+	unleashConfig.HTTPClient = httpClient(isDebug)
 	client := unleash.NewAPIClient(unleashConfig)
 
 	// Make the Inventory client available during DataSource and Resource
