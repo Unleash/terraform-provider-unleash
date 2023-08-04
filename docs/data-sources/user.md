@@ -3,12 +3,12 @@
 page_title: "unleash_user Data Source - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  Fetch an item.
+  Fetch a user.
 ---
 
 # unleash_user (Data Source)
 
-Fetch an item.
+Fetch a user.
 
 
 
@@ -18,6 +18,10 @@ Fetch an item.
 ### Required
 
 - `id` (String) Identifier for this user.
+
+### Optional
+
+- `email` (String) The email of the user.
 
 ### Read-Only
 

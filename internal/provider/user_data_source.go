@@ -30,7 +30,7 @@ type userDataSource struct {
 type userDataSourceModel struct {
 	ID       types.String `tfsdk:"id"`
 	Username types.String `tfsdk:"username"`
-	//Email    types.String `tfsdk:"email"`
+	Email    types.String `tfsdk:"email"`
 }
 
 // Configure adds the provider configured client to the data source.
@@ -56,7 +56,7 @@ func (d *userDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
 func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch an item.",
+		Description: "Fetch a user.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this user.",
@@ -66,17 +66,18 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 				Description: "The username.",
 				Computed:    true,
 			},
-			// "email": schema.StringAttribute{
-			// 	Description: "The email of the user.",
-			// 	Computed:    true,
-			// },
+			"email": schema.StringAttribute{
+				Description: "The email of the user.",
+				Computed:    true,
+				Optional:    true,
+			},
 		},
 	}
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	tflog.Debug(ctx, "Preparing to read item data source")
+	tflog.Debug(ctx, "Preparing to read user data source")
 	var state userDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
@@ -92,7 +93,7 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	if api_response.StatusCode != 200 {
 		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received for Item",
+			"Unexpected HTTP error code received",
 			api_response.Status,
 		)
 		return
@@ -102,7 +103,9 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	state = userDataSourceModel{
 		ID:       types.StringValue(fmt.Sprintf("%v", user.Id)),
 		Username: types.StringValue(*user.Username),
-		//Email:    types.StringValue(*user.Email),
+	}
+	if user.Email != nil {
+		state.Email = types.StringValue(*user.Email)
 	}
 
 	// Set state
