@@ -15,7 +15,6 @@ import (
 func testAccSampleUserResource(name string) string {
 	return fmt.Sprintf(`
 resource "unleash_user" "the_newbie" {
-    username = "test"
     name = "%s"
     email = "test@getunleash.io"
     root_role = "2"
@@ -31,7 +30,6 @@ func TestAccUserResource(t *testing.T) {
 				Config: testAccSampleUserResource("Test User"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
-					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Test User"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
@@ -42,7 +40,6 @@ func TestAccUserResource(t *testing.T) {
 				Config: testAccSampleUserResource("Renamed user"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
-					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Renamed user"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
