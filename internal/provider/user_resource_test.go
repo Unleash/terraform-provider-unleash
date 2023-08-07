@@ -15,12 +15,21 @@ import (
 func testAccSampleUserResource(name string) string {
 	return fmt.Sprintf(`
 resource "unleash_user" "the_newbie" {
-    username = "test"
     name = "%s"
     email = "test@getunleash.io"
     root_role = "2"
     send_email = false
 }`, name)
+}
+func testAccSampleUserResourceWithPassword(resource string, name string) string {
+	return fmt.Sprintf(`
+resource "unleash_user" "%s" {
+    name = "%s"
+    email = "test-password@getunleash.io"
+	password = "you-will-never-guess"
+    root_role = "3"
+    send_email = false
+}`, resource, name)
 }
 func TestAccUserResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
@@ -31,7 +40,6 @@ func TestAccUserResource(t *testing.T) {
 				Config: testAccSampleUserResource("Test User"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
-					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Test User"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
@@ -42,10 +50,20 @@ func TestAccUserResource(t *testing.T) {
 				Config: testAccSampleUserResource("Renamed user"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
-					resource.TestCheckResourceAttr("unleash_user.the_newbie", "username", "test"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Renamed user"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
 					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
+				// TODO test the remote object matches https://developer.hashicorp.com/terraform/plugin/testing/testing-patterns#basic-test-to-verify-attributes
+				),
+			},
+			{
+				Config: testAccSampleUserResourceWithPassword("with_pass", "User with password"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_user.with_pass", "id"),
+					resource.TestCheckResourceAttr("unleash_user.with_pass", "name", "User with password"),
+					resource.TestCheckResourceAttr("unleash_user.with_pass", "email", "test-password@getunleash.io"),
+					resource.TestCheckResourceAttr("unleash_user.with_pass", "root_role", "3"),
+					resource.TestCheckResourceAttr("unleash_user.with_pass", "password", "you-will-never-guess"),
 				// TODO test the remote object matches https://developer.hashicorp.com/terraform/plugin/testing/testing-patterns#basic-test-to-verify-attributes
 				),
 			},

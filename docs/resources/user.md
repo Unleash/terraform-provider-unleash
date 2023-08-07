@@ -23,7 +23,7 @@ User schema
 
 - `email` (String) The email of the user.
 - `name` (String) The name of the user.
-- `password` (String) The password of the user.
+- `password` (String, Sensitive) The password of the user.
 - `send_email` (Boolean) Send a welcome email to the customer or not. Defaults to true
 - `username` (String) The username.
 

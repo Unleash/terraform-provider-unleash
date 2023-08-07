@@ -67,6 +67,7 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "Identifier for this user.",
 				Computed:    true,
 			},
+			// TODO define optional either username or email, not both nil
 			"username": schema.StringAttribute{
 				Description: "The username.",
 				Optional:    true,
@@ -82,6 +83,7 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"password": schema.StringAttribute{
 				Description: "The password of the user.",
 				Optional:    true,
+				Sensitive:   true,
 			},
 			"root_role": schema.Int64Attribute{
 				Description: "The role id for the user.",
@@ -106,18 +108,24 @@ func (r *userResource) ImportState(ctx context.Context, req resource.ImportState
 
 func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	tflog.Debug(ctx, "Preparing to create user resource")
-	var state userResourceModel
+	var plan userResourceModel
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	createUserSchema := *unleash.NewCreateUserSchemaWithDefaults()
-	createUserSchema.Name = state.Name.ValueStringPointer()
-	createUserSchema.Email = state.Email.ValueStringPointer()
-	createUserSchema.Username = state.Username.ValueStringPointer()
-	createUserSchema.RootRole = float32(state.RootRole.ValueInt64())
-	createUserSchema.SendEmail = state.SendEmail.ValueBoolPointer()
+	// Generate API request body from plan
+	createUserRequest := *unleash.NewCreateUserSchemaWithDefaults()
+	createUserRequest.Name = plan.Name.ValueStringPointer()
+	createUserRequest.Username = plan.Username.ValueStringPointer()
+	createUserRequest.Email = plan.Email.ValueStringPointer()
+	createUserRequest.RootRole = float32(plan.RootRole.ValueInt64())
+	// Should SendEmail be part of the state? How do we model ephimeral input state in terraform?
+	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
+	// do we need to expose the invite link if send email is false?
 
-	user, api_response, err := r.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserSchema).Execute()
+	user, api_response, err := r.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -127,7 +135,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	if api_response.StatusCode != 201 { // TODO shfmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)fmt.Printf("Err:\n%s\n\n", err)ould we have something generic like 2xx?
+	if api_response.StatusCode != 201 {
 		resp.Diagnostics.AddError(
 			"Unexpected HTTP error code received",
 			api_response.Status,
@@ -136,11 +144,23 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Update model with response
-	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
-	state.Email = types.StringValue(*user.Email)
-	state.Username = types.StringValue(*user.Username)
-	state.Name = types.StringValue(*user.Name)
-	state.RootRole = types.Int64Value(int64(*user.RootRole))
+	plan.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
+	plan.RootRole = types.Int64Value(int64(*user.RootRole))
+	if user.Username != nil {
+		plan.Username = types.StringValue(*user.Username)
+	} else {
+		plan.Username = types.StringNull()
+	}
+	if user.Email != nil {
+		plan.Email = types.StringValue(*user.Email)
+	} else {
+		plan.Email = types.StringNull()
+	}
+	if user.Name != nil {
+		plan.Name = types.StringValue(*user.Name)
+	} else {
+		plan.Name = types.StringNull()
+	}
 	// TODO note the output state is not the same as input state
 	// here in output state we're saying what happened (i.e. ID is present)
 	// but in the input state we don't know if the email was sent or not
@@ -148,20 +168,20 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// In the output we receive if we've sent the email or not
 
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Debug(ctx, "Finished creating user data source", map[string]any{"success": true})
 }
 
 func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	tflog.Debug(ctx, "Preparing to read user resource")
 	var state userResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Get fresh data
 	user, api_response, err := r.client.UsersApi.GetUser(context.Background(), state.ID.ValueString()).Execute()
 
 	if err != nil {
@@ -182,9 +202,21 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	// Update model with response
 	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
-	state.Email = types.StringValue(*user.Email)
-	state.Username = types.StringValue(*user.Username)
-	state.Name = types.StringValue(*user.Name)
+	if user.Email != nil {
+		state.Email = types.StringValue(*user.Email)
+	} else {
+		state.Email = types.StringNull()
+	}
+	if user.Username != nil {
+		state.Username = types.StringValue(*user.Username)
+	} else {
+		state.Username = types.StringNull()
+	}
+	if user.Name != nil {
+		state.Name = types.StringValue(*user.Name)
+	} else {
+		state.Name = types.StringNull()
+	}
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 	tflog.Debug(ctx, "Finished populating model", map[string]any{"success": true})
 
@@ -240,9 +272,21 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Update model with response
-	state.Email = types.StringValue(*user.Email)
-	state.Username = types.StringValue(*user.Username)
-	state.Name = types.StringValue(*user.Name)
+	if user.Email != nil {
+		state.Email = types.StringValue(*user.Email)
+	} else {
+		state.Email = types.StringNull()
+	}
+	if user.Username != nil {
+		state.Username = types.StringValue(*user.Username)
+	} else {
+		state.Username = types.StringNull()
+	}
+	if user.Name != nil {
+		state.Name = types.StringValue(*user.Name)
+	} else {
+		state.Name = types.StringNull()
+	}
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 
 	// Set state
