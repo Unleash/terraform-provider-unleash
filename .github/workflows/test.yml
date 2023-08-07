@@ -50,7 +50,7 @@ jobs:
     name: Terraform Provider Acceptance Tests
     needs: [build]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -73,8 +73,8 @@ jobs:
           terraform_wrapper: false
       - run: go mod download
       - name: Start Unleash test instance
-        run: docker compose up -d --wait -t 60
+        run: docker compose up -d --wait -t 90
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
-        timeout-minutes: 10
+        timeout-minutes: 3

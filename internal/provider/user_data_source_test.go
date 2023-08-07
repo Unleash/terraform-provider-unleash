@@ -13,13 +13,17 @@ func TestAccUserDataSource(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: `
-					data "unleash_user" "test" {
+					data "unleash_user" "admin_user" {
 						id = 1
 					}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify placeholder id attribute
-					resource.TestCheckResourceAttr("data.unleash_user.test", "id", "1"),
-					resource.TestCheckResourceAttr("data.unleash_user.test", "username", "admin"),
+					resource.TestCheckResourceAttr("data.unleash_user.admin_user", "id", "1"),
+					resource.TestCheckResourceAttr("data.unleash_user.admin_user", "username", "admin"),
+					resource.TestCheckResourceAttr("data.unleash_user.admin_user", "root_role", "1"),
+					// by default, the admin user does not get a name or email
+					resource.TestCheckNoResourceAttr("data.unleash_user.admin_user", "name"),
+					resource.TestCheckNoResourceAttr("data.unleash_user.admin_user", "email"),
 				),
 			},
 		},

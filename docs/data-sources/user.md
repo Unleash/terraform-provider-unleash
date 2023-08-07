@@ -22,7 +22,9 @@ Fetch a user.
 ### Optional
 
 - `email` (String) The email of the user.
+- `name` (String) The name of the user.
+- `username` (String) The username of the user.
 
 ### Read-Only
 
-- `username` (String) The username.
+- `root_role` (Number) The role id for the user.
