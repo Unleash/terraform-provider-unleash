@@ -202,9 +202,21 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	// Update model with response
 	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
-	state.Email = types.StringValue(*user.Email)
-	state.Username = types.StringValue(*user.Username)
-	state.Name = types.StringValue(*user.Name)
+	if user.Email != nil {
+		state.Email = types.StringValue(*user.Email)
+	} else {
+		state.Email = types.StringNull()
+	}
+	if user.Username != nil {
+		state.Username = types.StringValue(*user.Username)
+	} else {
+		state.Username = types.StringNull()
+	}
+	if user.Name != nil {
+		state.Name = types.StringValue(*user.Name)
+	} else {
+		state.Name = types.StringNull()
+	}
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 	tflog.Debug(ctx, "Finished populating model", map[string]any{"success": true})
 
@@ -260,9 +272,21 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Update model with response
-	state.Email = types.StringValue(*user.Email)
-	state.Username = types.StringValue(*user.Username)
-	state.Name = types.StringValue(*user.Name)
+	if user.Email != nil {
+		state.Email = types.StringValue(*user.Email)
+	} else {
+		state.Email = types.StringNull()
+	}
+	if user.Username != nil {
+		state.Username = types.StringValue(*user.Username)
+	} else {
+		state.Username = types.StringNull()
+	}
+	if user.Name != nil {
+		state.Name = types.StringValue(*user.Name)
+	} else {
+		state.Name = types.StringNull()
+	}
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 
 	// Set state
