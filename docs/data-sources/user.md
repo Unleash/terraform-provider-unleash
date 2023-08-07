@@ -23,7 +23,7 @@ Fetch a user.
 
 - `email` (String) The email of the user.
 - `name` (String) The name of the user.
-- `username` (String) The name of the user.
+- `username` (String) The username of the user.
 
 ### Read-Only
 
