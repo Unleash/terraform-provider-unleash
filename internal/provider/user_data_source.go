@@ -31,6 +31,8 @@ type userDataSourceModel struct {
 	ID       types.String `tfsdk:"id"`
 	Username types.String `tfsdk:"username"`
 	Email    types.String `tfsdk:"email"`
+	Name     types.String `tfsdk:"name"`
+	RootRole types.Int64  `tfsdk:"root_role"`
 }
 
 // Configure adds the provider configured client to the data source.
@@ -62,14 +64,24 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 				Description: "Identifier for this user.",
 				Required:    true,
 			},
-			"username": schema.StringAttribute{
-				Description: "The username.",
-				Computed:    true,
-			},
 			"email": schema.StringAttribute{
 				Description: "The email of the user.",
 				Computed:    true,
 				Optional:    true,
+			},
+			"username": schema.StringAttribute{
+				Description: "The name of the user.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"name": schema.StringAttribute{
+				Description: "The name of the user.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"root_role": schema.Int64Attribute{
+				Description: "The role id for the user.",
+				Computed:    true,
 			},
 		},
 	}
@@ -102,10 +114,22 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	// Map response body to model
 	state = userDataSourceModel{
 		ID:       types.StringValue(fmt.Sprintf("%v", user.Id)),
-		Username: types.StringValue(*user.Username),
+		RootRole: types.Int64Value(int64(*user.RootRole)),
+	}
+	if user.Username != nil {
+		state.Username = types.StringValue(*user.Username)
+	} else {
+		state.Username = types.StringNull()
 	}
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
+	} else {
+		state.Email = types.StringNull()
+	}
+	if user.Name != nil {
+		state.Name = types.StringValue(*user.Name)
+	} else {
+		state.Name = types.StringNull()
 	}
 
 	// Set state

@@ -30,6 +30,7 @@ type userResource struct {
 
 type userResourceModel struct {
 	ID        types.String `tfsdk:"id"`
+	Username  types.String `tfsdk:"username"`
 	Email     types.String `tfsdk:"email"`
 	Name      types.String `tfsdk:"name"`
 	Password  types.String `tfsdk:"password"`
@@ -65,6 +66,11 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"id": schema.StringAttribute{
 				Description: "Identifier for this user.",
 				Computed:    true,
+			},
+			// TODO define optional either username or email, not both nil
+			"username": schema.StringAttribute{
+				Description: "The username.",
+				Optional:    true,
 			},
 			"email": schema.StringAttribute{
 				Description: "The email of the user.",
@@ -112,6 +118,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Generate API request body from plan
 	createUserRequest := *unleash.NewCreateUserSchemaWithDefaults()
 	createUserRequest.Name = plan.Name.ValueStringPointer()
+	createUserRequest.Username = plan.Username.ValueStringPointer()
 	createUserRequest.Email = plan.Email.ValueStringPointer()
 	createUserRequest.RootRole = float32(plan.RootRole.ValueInt64())
 	// Should SendEmail be part of the state? How do we model ephimeral input state in terraform?
@@ -138,9 +145,22 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Update model with response
 	plan.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
-	plan.Email = types.StringValue(*user.Email)
-	plan.Name = types.StringValue(*user.Name)
 	plan.RootRole = types.Int64Value(int64(*user.RootRole))
+	if user.Username != nil {
+		plan.Username = types.StringValue(*user.Username)
+	} else {
+		plan.Username = types.StringNull()
+	}
+	if user.Email != nil {
+		plan.Email = types.StringValue(*user.Email)
+	} else {
+		plan.Email = types.StringNull()
+	}
+	if user.Name != nil {
+		plan.Name = types.StringValue(*user.Name)
+	} else {
+		plan.Name = types.StringNull()
+	}
 	// TODO note the output state is not the same as input state
 	// here in output state we're saying what happened (i.e. ID is present)
 	// but in the input state we don't know if the email was sent or not
