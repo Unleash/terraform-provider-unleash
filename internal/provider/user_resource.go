@@ -203,6 +203,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	// Update model with response
 	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
 	state.Email = types.StringValue(*user.Email)
+	state.Username = types.StringValue(*user.Username)
 	state.Name = types.StringValue(*user.Name)
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 	tflog.Debug(ctx, "Finished populating model", map[string]any{"success": true})
@@ -216,6 +217,8 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	tflog.Debug(ctx, "Preparing to update user resource")
 	var state userResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
+
+	// TODO fail if you try to change the username, that's not possible or let the server fail?
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -258,6 +261,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Update model with response
 	state.Email = types.StringValue(*user.Email)
+	state.Username = types.StringValue(*user.Username)
 	state.Name = types.StringValue(*user.Name)
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 
