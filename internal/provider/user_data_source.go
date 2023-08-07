@@ -70,7 +70,7 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 				Optional:    true,
 			},
 			"username": schema.StringAttribute{
-				Description: "The name of the user.",
+				Description: "The username of the user.",
 				Optional:    true,
 				Computed:    true,
 			},
