@@ -8,8 +8,12 @@ github.com/Masterminds/sprig/v3 v3.2.2/go.mod h1:UoaO7Yp8KlPnJIYWTFkMaqPUYKTfGFP
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 h1:wPbRQzjjwFc0ih8puEVAOFGELsn1zoIIYdxvML7mDxA=
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8/go.mod h1:I0gYDMZ6Z5GRU7l58bNFSkPTFN6Yl12dsUlAZ8xy98g=
-github.com/Unleash/unleash-server-api-go/client v0.0.1 h1:Am04Y64K4IgvFZln0UzIBAlN4+JE+MIrvTU6Qwabfn8=
-github.com/Unleash/unleash-server-api-go/client v0.0.1/go.mod h1:SaaQv57o5vcYf3xhT2Hb8OEeaeNmB7Ggvo6qdbf4+AQ=
+github.com/Unleash/unleash-server-api-go v0.2.0 h1:p5zvUZEfvNPv1WkQMNhz2N9KDAY6D/lB8wbyyddhgzA=
+github.com/Unleash/unleash-server-api-go v0.2.0/go.mod h1:ukJX/I4r6lVesRcSP6z+3fCUlM/gtU9+ifx3OYfJMXg=
+github.com/Unleash/unleash-server-api-go v0.2.1 h1:aINvr206sr2KmYAN3pt5BIk3o+NjYn5RRBZd8xRZFTU=
+github.com/Unleash/unleash-server-api-go v0.2.1/go.mod h1:ukJX/I4r6lVesRcSP6z+3fCUlM/gtU9+ifx3OYfJMXg=
+github.com/Unleash/unleash-server-api-go v0.2.2 h1:BXJHG+OI/5i0mhB441WiKJ/ZCYNWkxHvDiMcJKXlvr4=
+github.com/Unleash/unleash-server-api-go v0.2.2/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
 github.com/acomagu/bufpipe v1.0.4 h1:e3H4WUzM3npvo5uv95QuJM3cQspFNtFBzvJ2oNjKIDQ=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

@@ -111,16 +111,21 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	var plan userResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	roleId, diags := plan.RootRole.ToInt64Value(ctx)
+	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	roleId32 := int32(roleId.ValueInt64())
 
 	// Generate API request body from plan
 	createUserRequest := *unleash.NewCreateUserSchemaWithDefaults()
 	createUserRequest.Name = plan.Name.ValueStringPointer()
 	createUserRequest.Username = plan.Username.ValueStringPointer()
 	createUserRequest.Email = plan.Email.ValueStringPointer()
-	createUserRequest.RootRole = float32(plan.RootRole.ValueInt64())
+	createUserRequest.RootRole = unleash.Int32AsCreateUserSchemaRootRole(&roleId32)
 	// Should SendEmail be part of the state? How do we model ephimeral input state in terraform?
 	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
 	// do we need to expose the invite link if send email is false?
@@ -145,7 +150,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Update model with response
 	plan.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
-	plan.RootRole = types.Int64Value(int64(*user.RootRole))
+	plan.RootRole = types.Int64Value(int64(*user.RootRole.Int32))
 	if user.Username != nil {
 		plan.Username = types.StringValue(*user.Username)
 	} else {
@@ -236,11 +241,13 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	newRootRole := float32(state.RootRole.ValueInt64())
+	newRootRole := int32(state.RootRole.ValueInt64())
+	role := unleash.Int32AsCreateUserSchemaRootRole(&newRootRole)
+
 	updateUserSchema := *unleash.NewUpdateUserSchemaWithDefaults()
 	updateUserSchema.Name = state.Name.ValueStringPointer()
 	updateUserSchema.Email = state.Email.ValueStringPointer()
-	updateUserSchema.RootRole = &newRootRole
+	updateUserSchema.RootRole = &role
 	requestBody, err := updateUserSchema.ToMap()
 	// handle if error
 	if err != nil {
@@ -287,7 +294,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	} else {
 		state.Name = types.StringNull()
 	}
-	state.RootRole = types.Int64Value(int64(*user.RootRole))
+	state.RootRole = types.Int64Value(int64(*user.RootRole.Int32))
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
