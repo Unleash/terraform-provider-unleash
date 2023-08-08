@@ -31,7 +31,7 @@ type UnleashProvider struct {
 	version string
 }
 
-// ScaffoldingProviderModel describes the provider data model.
+// ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
 type UnleashConfiguration struct {
 	BaseUrl       types.String `tfsdk:"base_url"`
 	Authorization types.String `tfsdk:"authorization"`
@@ -126,6 +126,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewUserDataSource,
+		NewProjectDataSource,
 	}
 }
 
