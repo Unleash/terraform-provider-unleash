@@ -236,6 +236,12 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
 
 	// TODO fail if you try to change the username, that's not possible or let the server fail?
+	// this is the error we generate right now:
+	// │ Error: Provider produced inconsistent result after apply
+	// │
+	// │ When applying changes to unleash_user.chuck, provider "provider[\"registry.terraform.io/unleash/unleash\"]" produced an unexpected new value: .username: was null, but now cty.StringVal("chuck").
+	// │
+	// │ This is a bug in the provider, which should be reported in the provider's own issue tracker.
 
 	if resp.Diagnostics.HasError() {
 		return
