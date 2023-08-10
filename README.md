@@ -19,6 +19,8 @@ go install
 
 https://developer.hashicorp.com/terraform/plugin/testing
 
+**Note**: some tests rely on an enterprise version of Unleash. To run those tests locally you need to set the environment variable `UNLEASH_ENTERPRISE=true`. To run docker with an enterprise image, login to GH docker registry following [preparation steps](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic) and then set the environment variable `UNLEASH_DOCKER_IMAGE` pointing to the enterprise docker image.
+
 Run tests (most likely we will not have a lot of unit tests but instead we'll have acceptance tests)
 
 ```shell

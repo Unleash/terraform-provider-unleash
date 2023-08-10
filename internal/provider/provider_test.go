@@ -31,4 +31,5 @@ func testAccPreCheck(_ *testing.T) {
 	// function.
 	envOrDefault("UNLEASH_URL", "http://localhost:4242")
 	envOrDefault("AUTH_TOKEN", "*:*.unleash-insecure-admin-api-token")
+	envOrDefault("UNLEASH_ENTERPRISE", "false")
 }
