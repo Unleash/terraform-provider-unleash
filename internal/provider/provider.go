@@ -120,6 +120,7 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewUserResource,
+		NewProjectResource,
 	}
 }
 
