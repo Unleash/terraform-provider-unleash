@@ -104,7 +104,7 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		Name: types.StringValue(fmt.Sprintf("%v", project.Name)),
 	}
 
-	if project.Description.IsSet() {
+	if project.Description.IsSet() && project.Description.Get() != nil {
 		state.Description = types.StringValue(fmt.Sprintf("%v", *project.Description.Get()))
 	} else {
 		state.Description = types.StringNull()
