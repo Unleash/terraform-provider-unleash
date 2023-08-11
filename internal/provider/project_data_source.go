@@ -11,18 +11,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &projectDataSource{}
 	_ datasource.DataSourceWithConfigure = &projectDataSource{}
 )
 
-// NewUserDataSource is a helper function to simplify the provider implementation.
 func NewProjectDataSource() datasource.DataSource {
 	return &projectDataSource{}
 }
 
-// userDataSource is the data source implementation.
 type projectDataSource struct {
 	client *unleash.APIClient
 }
@@ -33,7 +30,6 @@ type projectDataSourceModel struct {
 	Description types.String `tfsdk:"description"`
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *projectDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
