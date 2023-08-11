@@ -72,9 +72,18 @@ jobs:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download
+      - name: Login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: gastonfournier
+          password: ${{ secrets.GHCR_TOKEN }}
       - name: Start Unleash test instance
         run: docker compose up -d --wait -t 90
+        env:
+          UNLEASH_DOCKER_IMAGE: ${{ secrets.ENTERPRISE_IMAGE }}
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
+          UNLEASH_ENTERPRISE: "true"
         timeout-minutes: 3
