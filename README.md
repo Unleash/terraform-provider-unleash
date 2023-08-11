@@ -1,4 +1,5 @@
 # Unleash Terraform Provider
+[Join us on Slack](https://slack.unleash.run) at **#terraform-provider**
 
 ## Requirements
 
