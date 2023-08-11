@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -25,6 +26,9 @@ func testAccSampleProjectResourceWithNoDescription(name string, id string) strin
 }
 
 func TestAccProjectResource(t *testing.T) {
+	if os.Getenv("UNLEASH_ENTERPRISE") == "false" {
+		t.Skip("Skipping enterprise tests")
+	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
