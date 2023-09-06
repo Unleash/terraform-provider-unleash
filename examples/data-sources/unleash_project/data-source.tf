@@ -1,3 +1,3 @@
 data "unleash_project" "test" {
-    id = "default"
+  id = "default"
 }
