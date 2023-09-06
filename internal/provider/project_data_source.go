@@ -54,7 +54,7 @@ func (d *projectDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of this project.",
-				Required:    true,
+				Computed:    true,
 			},
 			"id": schema.StringAttribute{
 				Description: "The id of this project.",
