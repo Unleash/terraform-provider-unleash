@@ -130,7 +130,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
 	// do we need to expose the invite link if send email is false?
 
-	user, api_response, err := r.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
+	user, api_response, err := r.client.UsersAPI.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -187,7 +187,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Get fresh data
-	user, api_response, err := r.client.UsersApi.GetUser(context.Background(), state.ID.ValueString()).Execute()
+	user, api_response, err := r.client.UsersAPI.GetUser(context.Background(), state.ID.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -266,7 +266,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
 
-	user, api_response, err := r.client.UsersApi.UpdateUser(context.Background(), state.ID.ValueString()).RequestBody(requestBody).Execute()
+	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.ID.ValueString()).RequestBody(requestBody).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -317,7 +317,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	api_response, err := r.client.UsersApi.DeleteUser(ctx, state.ID.ValueString()).Execute()
+	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.ID.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

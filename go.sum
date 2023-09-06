@@ -14,6 +14,10 @@ github.com/Unleash/unleash-server-api-go v0.2.1 h1:aINvr206sr2KmYAN3pt5BIk3o+NjY
 github.com/Unleash/unleash-server-api-go v0.2.1/go.mod h1:ukJX/I4r6lVesRcSP6z+3fCUlM/gtU9+ifx3OYfJMXg=
 github.com/Unleash/unleash-server-api-go v0.2.2 h1:BXJHG+OI/5i0mhB441WiKJ/ZCYNWkxHvDiMcJKXlvr4=
 github.com/Unleash/unleash-server-api-go v0.2.2/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
+github.com/Unleash/unleash-server-api-go v0.2.3 h1:PKPQe5FHNihT2cNmS7J+MoOCC/AVlbZh3shjmP6GX+U=
+github.com/Unleash/unleash-server-api-go v0.2.3/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
+github.com/Unleash/unleash-server-api-go v0.2.4 h1:1/xXICUJ97y4MGaAzZ3uLKjZgFzaKR2ZL2ko4EqknlU=
+github.com/Unleash/unleash-server-api-go v0.2.4/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
 github.com/acomagu/bufpipe v1.0.4 h1:e3H4WUzM3npvo5uv95QuJM3cQspFNtFBzvJ2oNjKIDQ=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

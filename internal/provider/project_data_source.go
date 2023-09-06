@@ -74,7 +74,7 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
-	projects, api_response, err := d.client.ProjectsApi.GetProjects(ctx).Execute()
+	projects, api_response, err := d.client.ProjectsAPI.GetProjects(ctx).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

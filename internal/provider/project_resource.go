@@ -97,7 +97,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 		createProjectRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
 	}
 
-	project, api_response, err := r.client.ProjectsApi.CreateProject(context.Background()).CreateProjectSchema(createProjectRequest).Execute()
+	project, api_response, err := r.client.ProjectsAPI.CreateProject(context.Background()).CreateProjectSchema(createProjectRequest).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -135,7 +135,7 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	projects, api_response, err := r.client.ProjectsApi.GetProjects(context.Background()).Execute()
+	projects, api_response, err := r.client.ProjectsAPI.GetProjects(context.Background()).Execute()
 
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
@@ -190,7 +190,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	req.State.Get(ctx, &state)
 
-	api_response, err := r.client.ProjectsApi.UpdateProject(context.Background(), state.ID.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
+	api_response, err := r.client.ProjectsAPI.UpdateProject(context.Background(), state.ID.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -209,7 +209,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// our update doesn't return the project, so we need to re-read it
-	projects, api_response, err := r.client.ProjectsApi.GetProjects(context.Background()).Execute()
+	projects, api_response, err := r.client.ProjectsAPI.GetProjects(context.Background()).Execute()
 
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
@@ -256,7 +256,7 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	api_response, err := r.client.ProjectsApi.DeleteProject(ctx, state.ID.ValueString()).Execute()
+	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.ID.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

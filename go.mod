@@ -3,7 +3,7 @@ module github.com/Unleash/terraform-provider-unleash
 go 1.18
 
 require (
-	github.com/Unleash/unleash-server-api-go v0.2.2
+	github.com/Unleash/unleash-server-api-go v0.2.4
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.3.5
@@ -74,3 +74,5 @@ require (
 	google.golang.org/grpc v1.56.1 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
+
+replace github.com/Unleash/unleash-server-api-go/client => ../unleash-server-api-go
