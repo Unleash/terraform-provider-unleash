@@ -14,7 +14,6 @@ func TestAccProjectDataSource(t *testing.T) {
 			{
 				Config: `
 					data "unleash_project" "test" {
-						name = "default"
 						id = "default"
 					}`,
 				Check: resource.ComposeTestCheckFunc(
