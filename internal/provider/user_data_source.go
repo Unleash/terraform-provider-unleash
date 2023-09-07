@@ -126,8 +126,8 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Name != nil {
-		state.Name = types.StringValue(*user.Name)
+	if user.Name.IsSet() {
+		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}
