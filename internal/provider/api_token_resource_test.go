@@ -11,23 +11,23 @@ func TestAccApiTokenResource(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// {
-			// 	Config: `
-			// 	resource "unleash_api_token" "frontend_token" {
-			// 		token_name = "frontend_token"
-			// 		type = "frontend"
-			// 		expires_at = "2024-12-31T23:59:59Z"
-			// 		projects = ["*"]
-			// 		environment = "development"
-			// 	}`,
-			// 	Check: resource.ComposeAggregateTestCheckFunc(
-			// 		resource.TestCheckResourceAttrSet("unleash_api_token.frontend_token", "secret"),
-			// 		resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "token_name", "frontend_token"),
-			// 		resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "environment", "development"),
-			// 		resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "project", "*"),
-			// 		resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "projects.0", "*"),
-			// 	),
-			// },
+			{
+				Config: `
+				resource "unleash_api_token" "frontend_token" {
+					token_name = "frontend_token"
+					type = "frontend"
+					expires_at = "2024-12-31T23:59:59Z"
+					projects = ["*"]
+					environment = "development"
+				}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_api_token.frontend_token", "secret"),
+					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "token_name", "frontend_token"),
+					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "environment", "development"),
+					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "project", "*"),
+					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "projects.0", "*"),
+				),
+			},
 			{
 				Config: `
 				resource "unleash_api_token" "client_token" {
@@ -42,7 +42,7 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "token_name", "client_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "project", "default"),
-					// TODO resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
 				),
 			},
 			// {

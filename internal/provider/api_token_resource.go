@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -40,7 +41,7 @@ type apiTokenResourceCreateRequest struct {
 	// The project this token belongs to.
 	Project types.String `tfsdk:"project"`
 	// The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`
-	Projects []types.String `tfsdk:"projects"`
+	Projects types.List `tfsdk:"projects"`
 	// The token's expiration date. NULL if the token doesn't have an expiration set.
 	ExpiresAt types.String `tfsdk:"expires_at"`
 }
@@ -56,7 +57,7 @@ type apiTokenResourceModel struct {
 	// The project this token belongs to.
 	Project types.String `tfsdk:"project"`
 	// The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`
-	Projects types.List `tfsdk:"projects"`
+	Projects []types.String `tfsdk:"projects"`
 	// The token's expiration date. NULL if the token doesn't have an expiration set.
 	ExpiresAt types.String `tfsdk:"expires_at"`
 }
@@ -156,12 +157,9 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	if project != "" {
 		createAPITokenRequest.Project = &project
 	}
-	if plan.Projects != nil && len(plan.Projects) > 0 {
+	if !plan.Projects.IsNull() && !plan.Projects.IsUnknown() {
 		tflog.Debug(ctx, fmt.Sprintf("Iterating over projects: %+v to put them into %+v", plan.Projects, createAPITokenRequest.Projects))
-		createAPITokenRequest.Projects = make([]string, 0, len(plan.Projects))
-		for _, p := range plan.Projects {
-			createAPITokenRequest.Projects = append(createAPITokenRequest.Projects, p.ValueString())
-		}
+		plan.Projects.ElementsAs(ctx, &createAPITokenRequest.Projects, false)
 	}
 	createAPITokenRequest.ExpiresAt = &expire
 	createTokenRequest := unleash.CreateApiTokenSchemaOneOf2AsCreateApiTokenSchema(&createAPITokenRequest)
@@ -203,20 +201,14 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	newState.Project = types.StringValue(token.Project)
 	if token.Projects == nil {
 		// replace with response
-		//plan.Projects, _ = types.ListValueFrom(ctx, types.StringType, token.Projects)
-		newState.Projects = types.ListNull(types.StringType)
 		tflog.Debug(ctx, fmt.Sprintf("Token has projects: %+v but plan is %+v", token.Projects, plan.Projects))
 	} else {
-		// plan.Projects.ElementsAs(ctx, &token.Projects, false)
-		//plan.Projects, _ = types.SetValueFrom(ctx, types.StringType, token.Projects)
-		// plan.Projects = types.ListNull(types.StringType) //ListValueFrom(ctx, types.StringType, token.Projects)
-
-		// wipe up option
-		// projects := make([]string, 0)
-		// plan.Projects, _ = types.ListValueFrom(ctx, types.StringType, projects)
-		// tflog.Debug(ctx, fmt.Sprintf("Projects not null: %+v", plan.Projects))
-
-		newState.Projects, _ = types.ListValueFrom(ctx, types.StringType, token.Projects)
+		if token.Projects != nil {
+			newState.Projects = make([]basetypes.StringValue, 0, len(token.Projects))
+			for _, p := range token.Projects {
+				newState.Projects = append(newState.Projects, types.StringValue(p))
+			}
+		}
 		tflog.Debug(ctx, fmt.Sprintf("Projects not null: %+v", token.Projects))
 	}
 
@@ -274,7 +266,10 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	state.Type = types.StringValue(token.Type)
 	state.Project = types.StringValue(token.Project)
 	if token.Projects != nil {
-		state.Projects.ElementsAs(ctx, &token.Projects, false)
+		state.Projects = make([]basetypes.StringValue, 0, len(token.Projects))
+		for _, p := range token.Projects {
+			state.Projects = append(state.Projects, types.StringValue(p))
+		}
 	}
 	if token.ExpiresAt.IsSet() {
 		state.ExpiresAt = types.StringValue(token.ExpiresAt.Get().Format(time.RFC3339))
