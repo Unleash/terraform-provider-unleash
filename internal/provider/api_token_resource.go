@@ -87,6 +87,7 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"environment": schema.StringAttribute{
 				Description: "An environment the token has access to.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"project": schema.StringAttribute{
 				Description: "A project the token belongs to.",
@@ -126,17 +127,10 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Generate API request body from plan
-	expire, err := time.Parse(time.RFC3339, plan.ExpiresAt.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to parse expiration date",
-			err.Error(),
-		)
-		return
-	}
-
 	createAPITokenRequest := *unleash.NewCreateApiTokenSchemaOneOf2(plan.Type.ValueString(), plan.TokenName.ValueString())
-	createAPITokenRequest.Environment = plan.Environment.ValueStringPointer()
+	if !plan.Environment.IsNull() && !plan.Environment.IsUnknown() {
+		createAPITokenRequest.Environment = plan.Environment.ValueStringPointer()
+	}
 	project := plan.Project.ValueString()
 	if project != "" {
 		createAPITokenRequest.Project = &project
@@ -145,7 +139,17 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 		tflog.Debug(ctx, fmt.Sprintf("Iterating over projects: %+v to put them into %+v", plan.Projects, createAPITokenRequest.Projects))
 		plan.Projects.ElementsAs(ctx, &createAPITokenRequest.Projects, false)
 	}
-	createAPITokenRequest.ExpiresAt = &expire
+	if !plan.ExpiresAt.IsNull() && !plan.ExpiresAt.IsUnknown() {
+		expire, err := time.Parse(time.RFC3339, plan.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to parse expiration date",
+				err.Error(),
+			)
+			return
+		}
+		createAPITokenRequest.ExpiresAt = &expire
+	}
 	createTokenRequest := unleash.CreateApiTokenSchemaOneOf2AsCreateApiTokenSchema(&createAPITokenRequest)
 
 	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(createTokenRequest).Execute()
@@ -177,7 +181,7 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	} else {
 		newState.Environment = types.StringNull()
 	}
-	if token.ExpiresAt.IsSet() {
+	if token.ExpiresAt.IsSet() && token.ExpiresAt.Get() != nil {
 		newState.ExpiresAt = types.StringValue(token.ExpiresAt.Get().Format(time.RFC3339))
 	} else {
 		newState.ExpiresAt = types.StringNull()
@@ -249,7 +253,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if token.Projects != nil {
 		state.Projects, _ = basetypes.NewListValueFrom(ctx, types.StringType, token.Projects)
 	}
-	if token.ExpiresAt.IsSet() {
+	if token.ExpiresAt.IsSet() && token.ExpiresAt.Get() != nil {
 		state.ExpiresAt = types.StringValue(token.ExpiresAt.Get().Format(time.RFC3339))
 	} else {
 		state.ExpiresAt = types.StringNull()
@@ -266,18 +270,23 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 	var state apiTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
 
-	expire, err := time.Parse(time.RFC3339, state.ExpiresAt.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to parse expiration date",
-			err.Error(),
-		)
-		return
+	var expire time.Time
+	var err error
+	if !state.ExpiresAt.IsNull() && !state.ExpiresAt.IsUnknown() {
+		expire, err = time.Parse(time.RFC3339, state.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to parse expiration date",
+				err.Error(),
+			)
+			return
+		}
+	} else {
+		resp.Diagnostics.AddError("ExpiresAt is mandatory when updating a token", "The value provided was null or unknown")
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	updateApiTokenSchema := *unleash.NewUpdateApiTokenSchema(expire)
 
 	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
@@ -301,6 +310,7 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// Set state
+	state.ExpiresAt = types.StringValue(expire.Format(time.RFC3339))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished updating api token data source", map[string]any{"success": true})
 }
