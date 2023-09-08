@@ -3,12 +3,12 @@
 page_title: "unleash Provider"
 subcategory: ""
 description: |-
-  Interface with Unleash server API.
+  Interface with Unleash server API https://docs.getunleash.io/reference/api/unleash. This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
 ---
 
 # unleash Provider
 
-Interface with Unleash server API.
+Interface with [Unleash server API](https://docs.getunleash.io/reference/api/unleash). This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
 
 ## Example Usage
 

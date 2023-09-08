@@ -55,7 +55,7 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				Sensitive:           true,
 			},
 		},
-		Description: "Interface with Unleash server API.",
+		MarkdownDescription: "Interface with [Unleash server API](https://docs.getunleash.io/reference/api/unleash). This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.",
 	}
 }
 
