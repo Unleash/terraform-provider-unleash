@@ -98,7 +98,7 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 			continue
 		}
 
-		user, response, err := apiClient.UsersApi.GetUser(context.Background(), rs.Primary.ID).Execute()
+		user, response, err := apiClient.UsersAPI.GetUser(context.Background(), rs.Primary.ID).Execute()
 		if err == nil {
 			if fmt.Sprintf("%v", user.Id) == rs.Primary.ID {
 				return fmt.Errorf("User (%s) still exists.", rs.Primary.ID)

@@ -94,7 +94,7 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
-	user, api_response, err := d.client.UsersApi.GetUser(ctx, state.ID.ValueString()).Execute()
+	user, api_response, err := d.client.UsersAPI.GetUser(ctx, state.ID.ValueString()).Execute()
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read User",
@@ -126,8 +126,8 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Name != nil {
-		state.Name = types.StringValue(*user.Name)
+	if user.Name.IsSet() {
+		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}

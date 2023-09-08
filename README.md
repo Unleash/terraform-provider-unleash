@@ -1,5 +1,14 @@
 # Unleash Terraform Provider
+
 [Join us on Slack](https://slack.unleash.run) at **#terraform-provider**
+
+- Documentation on [terraform registry](https://registry.terraform.io/providers/unleash/unleash/latest/docs)
+
+## Overview
+
+This terraform provider is not intended to support everything in Unleash. The main focus is to support the initial setup and configuration of an Unleash instance.
+
+Because feature flags should be short lived, we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
 
 ## Requirements
 

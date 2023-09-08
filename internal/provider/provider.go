@@ -121,6 +121,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 	return []func() resource.Resource{
 		NewUserResource,
 		NewProjectResource,
+		NewApiTokenResource,
 	}
 }
 

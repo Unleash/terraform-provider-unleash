@@ -130,11 +130,11 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
 	// do we need to expose the invite link if send email is false?
 
-	user, api_response, err := r.client.UsersApi.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
+	user, api_response, err := r.client.UsersAPI.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Read User",
+			"Unable to Create User",
 			err.Error(),
 		)
 		return
@@ -161,8 +161,8 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	} else {
 		plan.Email = types.StringNull()
 	}
-	if user.Name != nil {
-		plan.Name = types.StringValue(*user.Name)
+	if user.Name.IsSet() {
+		plan.Name = types.StringValue(*user.Name.Get())
 	} else {
 		plan.Name = types.StringNull()
 	}
@@ -187,7 +187,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Get fresh data
-	user, api_response, err := r.client.UsersApi.GetUser(context.Background(), state.ID.ValueString()).Execute()
+	user, api_response, err := r.client.UsersAPI.GetUser(context.Background(), state.ID.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -217,8 +217,8 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	} else {
 		state.Username = types.StringNull()
 	}
-	if user.Name != nil {
-		state.Name = types.StringValue(*user.Name)
+	if user.Name.IsSet() {
+		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}
@@ -254,23 +254,14 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	updateUserSchema.Name = state.Name.ValueStringPointer()
 	updateUserSchema.Email = state.Email.ValueStringPointer()
 	updateUserSchema.RootRole = &role
-	requestBody, err := updateUserSchema.ToMap()
-	// handle if error
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read User",
-			err.Error(),
-		)
-		return
-	}
 
 	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
 
-	user, api_response, err := r.client.UsersApi.UpdateUser(context.Background(), state.ID.ValueString()).RequestBody(requestBody).Execute()
+	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.ID.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Read User",
+			"Unable to Update User",
 			err.Error(),
 		)
 		return
@@ -295,8 +286,8 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	} else {
 		state.Username = types.StringNull()
 	}
-	if user.Name != nil {
-		state.Name = types.StringValue(*user.Name)
+	if user.Name.IsSet() {
+		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}
@@ -317,11 +308,11 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	api_response, err := r.client.UsersApi.DeleteUser(ctx, state.ID.ValueString()).Execute()
+	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.ID.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Read User",
+			"Unable to Delete User",
 			err.Error(),
 		)
 		return
