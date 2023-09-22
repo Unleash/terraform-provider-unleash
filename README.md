@@ -10,6 +10,8 @@ This terraform provider is not intended to support everything in Unleash. The ma
 
 Because feature flags should be short lived, we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
 
+If you're interested in using Terraform to manage feature flags, you can use [philips-labs/unleash provider](https://registry.terraform.io/providers/philips-labs/unleash/latest/docs) that supports managing feature flags.
+
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
@@ -40,7 +42,7 @@ go test -count=1 -v ./...
 Run **acceptance tests** which cover the provider and resources code
 
 ```shell
-TF_LOG=trace TF_ACC=1 go test ./... -v -count=1
+TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
 
 or the following make target (although it will cache results if nothing changes)
