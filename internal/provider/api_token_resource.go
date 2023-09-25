@@ -289,7 +289,7 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 	updateApiTokenSchema := *unleash.NewUpdateApiTokenSchema(expire)
 
-	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
+	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.Id seems to be null
 
 	api_response, err := r.client.APITokensAPI.UpdateApiToken(context.Background(), state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
 

@@ -26,7 +26,7 @@ type projectResource struct {
 }
 
 type projectResourceModel struct {
-	ID          types.String `tfsdk:"id"`
+	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
@@ -92,7 +92,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 
 	createProjectRequest := *unleash.NewCreateProjectSchemaWithDefaults()
 	createProjectRequest.Name = *plan.Name.ValueStringPointer()
-	createProjectRequest.Id = *plan.ID.ValueStringPointer()
+	createProjectRequest.Id = *plan.Id.ValueStringPointer()
 	if !plan.Description.IsNull() {
 		createProjectRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
 	}
@@ -115,7 +115,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	plan.ID = types.StringValue(project.Id)
+	plan.Id = types.StringValue(project.Id)
 	plan.Name = types.StringValue(project.Name)
 	if project.Description.IsSet() {
 		plan.Description = types.StringValue(*project.Description.Get())
@@ -139,14 +139,14 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
-		if p.Id == state.ID.ValueString() {
+		if p.Id == state.Id.ValueString() {
 			project = p
 		}
 	}
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read Project %s", state.ID.ValueString()),
+			fmt.Sprintf("Unable to Read Project %s", state.Id.ValueString()),
 			err.Error(),
 		)
 		return
@@ -160,7 +160,7 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	state.ID = types.StringValue(fmt.Sprintf("%v", project.Id))
+	state.Id = types.StringValue(fmt.Sprintf("%v", project.Id))
 	state.Name = types.StringValue(fmt.Sprintf("%v", project.Name))
 
 	if project.Description.IsSet() && project.Description.Get() != nil {
@@ -190,7 +190,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	req.State.Get(ctx, &state)
 
-	api_response, err := r.client.ProjectsAPI.UpdateProject(context.Background(), state.ID.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
+	api_response, err := r.client.ProjectsAPI.UpdateProject(context.Background(), state.Id.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -213,13 +213,13 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
-		if p.Id == state.ID.ValueString() {
+		if p.Id == state.Id.ValueString() {
 			project = p
 		}
 	}
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read Project %s", state.ID.ValueString()),
+			fmt.Sprintf("Unable to Read Project %s", state.Id.ValueString()),
 			err.Error(),
 		)
 		return
@@ -233,7 +233,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	state.ID = types.StringValue(fmt.Sprintf("%v", project.Id))
+	state.Id = types.StringValue(fmt.Sprintf("%v", project.Id))
 	state.Name = types.StringValue(fmt.Sprintf("%v", project.Name))
 
 	if project.Description.IsSet() {
@@ -256,7 +256,7 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.ID.ValueString()).Execute()
+	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.Id.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

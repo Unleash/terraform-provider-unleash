@@ -29,7 +29,7 @@ type userResource struct {
 }
 
 type userResourceModel struct {
-	ID        types.String `tfsdk:"id"`
+	Id        types.String `tfsdk:"id"`
 	Username  types.String `tfsdk:"username"`
 	Email     types.String `tfsdk:"email"`
 	Name      types.String `tfsdk:"name"`
@@ -149,7 +149,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Update model with response
-	plan.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
+	plan.Id = types.StringValue(fmt.Sprintf("%v", user.Id))
 	plan.RootRole = types.Int64Value(int64(*user.RootRole.Int32))
 	if user.Username != nil {
 		plan.Username = types.StringValue(*user.Username)
@@ -167,7 +167,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		plan.Name = types.StringNull()
 	}
 	// TODO note the output state is not the same as input state
-	// here in output state we're saying what happened (i.e. ID is present)
+	// here in output state we're saying what happened (i.e. Id is present)
 	// but in the input state we don't know if the email was sent or not
 	// but we do have a SendEmail configuration
 	// In the output we receive if we've sent the email or not
@@ -187,11 +187,11 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Get fresh data
-	user, api_response, err := r.client.UsersAPI.GetUser(context.Background(), state.ID.ValueString()).Execute()
+	user, api_response, err := r.client.UsersAPI.GetUser(context.Background(), state.Id.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read User %s", state.ID.ValueString()),
+			fmt.Sprintf("Unable to Read User %s", state.Id.ValueString()),
 			err.Error(),
 		)
 		return
@@ -206,7 +206,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Update model with response
-	state.ID = types.StringValue(fmt.Sprintf("%v", user.Id))
+	state.Id = types.StringValue(fmt.Sprintf("%v", user.Id))
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
 	} else {
@@ -255,9 +255,9 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	updateUserSchema.Email = state.Email.ValueStringPointer()
 	updateUserSchema.RootRole = &role
 
-	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.ID seems to be null
+	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.Id seems to be null
 
-	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.ID.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
+	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -308,7 +308,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.ID.ValueString()).Execute()
+	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.Id.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
