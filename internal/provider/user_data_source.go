@@ -28,7 +28,7 @@ type userDataSource struct {
 }
 
 type userDataSourceModel struct {
-	ID       types.String `tfsdk:"id"`
+	Id       types.String `tfsdk:"id"`
 	Username types.String `tfsdk:"username"`
 	Email    types.String `tfsdk:"email"`
 	Name     types.String `tfsdk:"name"`
@@ -94,7 +94,7 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
-	user, api_response, err := d.client.UsersAPI.GetUser(ctx, state.ID.ValueString()).Execute()
+	user, api_response, err := d.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read User",
@@ -113,7 +113,7 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	// Map response body to model
 	state = userDataSourceModel{
-		ID:       types.StringValue(fmt.Sprintf("%v", user.Id)),
+		Id:       types.StringValue(fmt.Sprintf("%v", user.Id)),
 		RootRole: types.Int64Value(int64(*user.RootRole)),
 	}
 	if user.Username != nil {

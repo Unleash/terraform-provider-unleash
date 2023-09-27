@@ -25,7 +25,7 @@ type projectDataSource struct {
 }
 
 type projectDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
+	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
@@ -94,13 +94,13 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
-		if p.Id == state.ID.ValueString() {
+		if p.Id == state.Id.ValueString() {
 			project = p
 		}
 	}
 
 	state = projectDataSourceModel{
-		ID:   types.StringValue(fmt.Sprintf("%v", project.Id)),
+		Id:   types.StringValue(fmt.Sprintf("%v", project.Id)),
 		Name: types.StringValue(fmt.Sprintf("%v", project.Name)),
 	}
 

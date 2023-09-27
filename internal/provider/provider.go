@@ -130,6 +130,7 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewUserDataSource,
 		NewProjectDataSource,
 		NewPermissionDataSource,
+		NewRoleDataSource,
 	}
 }
 
