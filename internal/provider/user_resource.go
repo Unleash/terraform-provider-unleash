@@ -255,7 +255,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	updateUserSchema.Email = state.Email.ValueStringPointer()
 	updateUserSchema.RootRole = &role
 
-	req.State.Get(ctx, &state) // I still don't get why but this is needed and the req.Plan.Get above is also needed and the order has to be this one... Otherwise state.Id seems to be null
+	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
 	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
 
