@@ -61,6 +61,14 @@ jobs:
           - "1.2.*"
           - "1.3.*"
           - "1.4.*"
+        docker-image:
+          - "${{ secrets.ENTERPRISE_IMAGE }}"
+          - "unleashorg/unleash-server:5.4"
+          - "unleashorg/unleash-server:5.5"
+          - "unleashorg/unleash-server:latest"
+        include:
+          - docker-image: "${{ secrets.ENTERPRISE_IMAGE }}"
+            enterprise: "true"
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
@@ -81,9 +89,9 @@ jobs:
       - name: Start Unleash test instance
         run: docker compose up -d --wait -t 90
         env:
-          UNLEASH_DOCKER_IMAGE: ${{ secrets.ENTERPRISE_IMAGE }}
+          UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
-          UNLEASH_ENTERPRISE: "true"
+          UNLEASH_ENTERPRISE: "${{ matrix.enterprise || 'false' }}"
         timeout-minutes: 3
