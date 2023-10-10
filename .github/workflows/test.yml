@@ -63,8 +63,7 @@ jobs:
           - "1.4.*"
         docker-image:
           - "ghcr.io/ivarconr/unleash-enterprise:latest"
-          - "unleashorg/unleash-server:5.4"
-          - "unleashorg/unleash-server:5.5"
+          - "unleashorg/unleash-server:5.4.4"
           - "unleashorg/unleash-server:latest"
         include:
           - docker-image: "ghcr.io/ivarconr/unleash-enterprise:latest"
