@@ -58,7 +58,7 @@ make testacc
 
 ### Before pushing
 
-- `golangci-lint run` to lint the code
+- `golangci-lint run --fix` to lint the code
 - `go generate ./...` to update docs
 
 ## Using the provider

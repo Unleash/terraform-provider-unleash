@@ -26,14 +26,14 @@ type projectAccessResource struct {
 }
 
 type roleWithMembers struct {
-	Role    int32   `tfsdk:"role"`
-	Users   []int32 `tfsdk:"users"`
-	Groups  []int32 `tfsdk:"groups"`
+	Role   int32   `tfsdk:"role"`
+	Users  []int32 `tfsdk:"users"`
+	Groups []int32 `tfsdk:"groups"`
 }
 
 type projectAccessResourceModel struct {
-	Project     types.String `tfsdk:"project"`
-	Roles       []roleWithMembers `tfsdk:"roles"`
+	Project types.String      `tfsdk:"project"`
+	Roles   []roleWithMembers `tfsdk:"roles"`
 }
 
 // Configure adds the provider configured client to the data source.
