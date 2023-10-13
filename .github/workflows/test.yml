@@ -62,12 +62,8 @@ jobs:
           - "1.3.*"
           - "1.4.*"
         docker-image:
-          - "ghcr.io/ivarconr/unleash-enterprise:latest"
-          - "unleashorg/unleash-server:5.4.4"
+          - "ghcr.io/ivarconr/unleash-enterprise:5.5.6-terraform.0" # this is a pre-release, latest still does not support set project access
           - "unleashorg/unleash-server:latest"
-        include:
-          - docker-image: "ghcr.io/ivarconr/unleash-enterprise:latest"
-            enterprise: "true"
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
@@ -92,5 +88,5 @@ jobs:
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
-          UNLEASH_ENTERPRISE: "${{ matrix.enterprise || 'false' }}"
+          UNLEASH_ENTERPRISE: "${{ contains(matrix.docker-image, 'unleash-enterprise') }}"
         timeout-minutes: 3

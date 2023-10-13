@@ -120,14 +120,15 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	roleWithPermissions := *unleash.NewCreateRoleWithPermissionsSchemaOneOf(plan.Name.ValueString(), plan.Type.ValueString())
+	roleWithPermissions := *unleash.NewCreateRoleWithPermissionsSchemaAnyOf(plan.Name.ValueString())
+	roleWithPermissions.Type = plan.Type.ValueStringPointer()
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		roleWithPermissions.Description = plan.Description.ValueStringPointer()
 	}
 
-	permissions := make([]unleash.CreateRoleWithPermissionsSchemaOneOfPermissionsInner, 0, len(plan.Permissions))
+	permissions := make([]unleash.CreateRoleWithPermissionsSchemaAnyOfPermissionsInner, 0, len(plan.Permissions))
 	for _, plannedPermission := range plan.Permissions {
-		permissionRef := unleash.CreateRoleWithPermissionsSchemaOneOfPermissionsInner{
+		permissionRef := unleash.CreateRoleWithPermissionsSchemaAnyOfPermissionsInner{
 			Name: plannedPermission.Name.ValueString(),
 		}
 		if !plannedPermission.Environment.IsNull() && !plannedPermission.Environment.IsUnknown() {
@@ -137,7 +138,8 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 	roleWithPermissions.Permissions = permissions
 
-	createRoleRequest := unleash.CreateRoleWithPermissionsSchemaOneOfAsCreateRoleWithPermissionsSchema(&roleWithPermissions)
+	createRoleRequest := unleash.CreateRoleWithPermissionsSchema{}
+	createRoleRequest.CreateRoleWithPermissionsSchemaAnyOf = &roleWithPermissions
 
 	role, api_response, err := r.client.UsersAPI.CreateRole(ctx).CreateRoleWithPermissionsSchema(createRoleRequest).Execute()
 
@@ -261,14 +263,15 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	roleWithPermissions := *unleash.NewCreateRoleWithPermissionsSchemaOneOf(state.Name.ValueString(), state.Type.ValueString())
+	roleWithPermissions := *unleash.NewCreateRoleWithPermissionsSchemaAnyOf(state.Name.ValueString())
+	roleWithPermissions.Type = state.Type.ValueStringPointer()
 	if !state.Description.IsNull() && !state.Description.IsUnknown() {
 		roleWithPermissions.Description = state.Description.ValueStringPointer()
 	}
 
-	permissions := make([]unleash.CreateRoleWithPermissionsSchemaOneOfPermissionsInner, 0, len(state.Permissions))
+	permissions := make([]unleash.CreateRoleWithPermissionsSchemaAnyOfPermissionsInner, 0, len(state.Permissions))
 	for _, plannedPermission := range state.Permissions {
-		permissionRef := unleash.CreateRoleWithPermissionsSchemaOneOfPermissionsInner{
+		permissionRef := unleash.CreateRoleWithPermissionsSchemaAnyOfPermissionsInner{
 			Name: plannedPermission.Name.ValueString(),
 		}
 		if !plannedPermission.Environment.IsNull() && !plannedPermission.Environment.IsUnknown() {
@@ -278,7 +281,8 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 	roleWithPermissions.Permissions = permissions
 
-	updateRoleSchema := unleash.CreateRoleWithPermissionsSchemaOneOfAsCreateRoleWithPermissionsSchema(&roleWithPermissions)
+	updateRoleSchema := unleash.CreateRoleWithPermissionsSchema{}
+	updateRoleSchema.CreateRoleWithPermissionsSchemaAnyOf = &roleWithPermissions
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 	roleId := fmt.Sprintf("%v", state.Id)
