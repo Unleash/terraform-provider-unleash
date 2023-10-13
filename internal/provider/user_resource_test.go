@@ -32,6 +32,9 @@ resource "unleash_user" "%s" {
 }`, resource, name)
 }
 func TestAccUserResource(t *testing.T) {
+	if os.Getenv("UNLEASH_ENTERPRISE") == "false" {
+		t.Skip("Skipping enterprise tests")
+	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

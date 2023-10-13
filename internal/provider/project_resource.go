@@ -256,23 +256,23 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.Id.ValueString()).Execute()
+	// api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.Id.ValueString()).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read project ",
-			err.Error(),
-		)
-		return
-	}
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(
+	// 		"Unable to read project ",
+	// 		err.Error(),
+	// 	)
+	// 	return
+	// }
 
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
-		return
-	}
+	// if api_response.StatusCode != 200 {
+	// 	resp.Diagnostics.AddError(
+	// 		"Unexpected HTTP error code received",
+	// 		api_response.Status,
+	// 	)
+	// 	return
+	// }
 
 	resp.State.RemoveResource(ctx)
 	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})

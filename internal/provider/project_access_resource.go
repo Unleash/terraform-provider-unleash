@@ -26,9 +26,9 @@ type projectAccessResource struct {
 }
 
 type roleWithMembers struct {
-	Role   int32   `tfsdk:"role"`
-	Users  []int32 `tfsdk:"users"`
-	Groups []int32 `tfsdk:"groups"`
+	Role   types.Int64   `tfsdk:"role"`
+	Users  types.List 	 `tfsdk:"users"`
+	Groups types.List 	 `tfsdk:"groups"`
 }
 
 type projectAccessResourceModel struct {
@@ -53,7 +53,7 @@ func (r *projectAccessResource) Configure(ctx context.Context, req resource.Conf
 
 // Metadata returns the data source type name.
 func (r *projectAccessResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_projectAccess_access"
+	resp.TypeName = req.ProviderTypeName + "_project_access"
 }
 
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
@@ -113,9 +113,28 @@ func (r *projectAccessResource) Create(ctx context.Context, req resource.CreateR
 	roles := []unleash.ProjectAccessConfigurationSchemaRolesInner{}
 	for _, r := range plan.Roles {
 		rolePayload := *unleash.NewProjectAccessConfigurationSchemaRolesInnerWithDefaults()
-		rolePayload.Id = &r.Role
-		rolePayload.Users = append(rolePayload.Users, r.Users...)
-		rolePayload.Groups = append(rolePayload.Groups, r.Groups...)
+		roleId := int32(r.Role.ValueInt64())
+		rolePayload.Id = &roleId
+		tflog.Debug(ctx, fmt.Sprintf("Creating role %v", roleId))
+		if !r.Users.IsNull() && !r.Users.IsUnknown() {
+			tflog.Debug(ctx, fmt.Sprintf("Adding users %v", r.Users))
+			resp.Diagnostics.Append(r.Users.ElementsAs(ctx, &rolePayload.Users, false)...)
+		}
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		tflog.Debug(ctx, fmt.Sprintf("Adding Groups %v", r.Groups))
+		if !r.Groups.IsNull() && !r.Groups.IsUnknown() {
+			resp.Diagnostics.Append(r.Groups.ElementsAs(ctx, &rolePayload.Groups, false)...)
+		} else {
+			tflog.Debug(ctx, fmt.Sprintf("None found %v", r.Groups))
+			rolePayload.Groups = make([]int32, 0)
+		}
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		roles = append(roles, rolePayload)
 	}
 	accessConfiguration := *unleash.NewProjectAccessConfigurationSchema(roles)
@@ -124,13 +143,13 @@ func (r *projectAccessResource) Create(ctx context.Context, req resource.CreateR
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to read projectAccess ",
+			"Unable to read projectAccess",
 			err.Error(),
 		)
 		return
 	}
 
-	if api_response.StatusCode != 201 {
+	if api_response.StatusCode != 200 {
 		resp.Diagnostics.AddError(
 			"Unexpected HTTP error code received",
 			api_response.Status,
@@ -153,7 +172,7 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 
 	projectId := *state.Project.ValueStringPointer()
 
-	projectAccess, api_response, err := r.client.ProjectsAPI.GetProjectAccess(context.Background(), projectId).Execute()
+	_, api_response, err := r.client.ProjectsAPI.GetProjectAccess(context.Background(), projectId).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -171,7 +190,22 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &projectAccess)...)
+
+	// Create a struct that represents a map by roleId having users and groups as lists of the struct
+	// unleash.ProjectAccessConfigurationSchemaRolesInner
+	// This is used to create a list of roles with their users and groups
+	// rolesMap := make(map[int64]unleash.ProjectAccessConfigurationSchemaRolesInner)
+	// for _, role := range projectAccess.Roles {
+	// 	createdRole := rolesMap[int64(role.Id)]
+	// 	if (createdRole == nil) {
+
+	// 	}
+	// 	role.Users, _ = basetypes.NewListValueFrom(ctx, types.StringType, role.Users)
+	// }
+
+	// state.Roles, _ = basetypes.NewListValueFrom(ctx, types.StringType, projectAccess.Roles)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading projectAccess data source", map[string]any{"success": true})
 }
 
