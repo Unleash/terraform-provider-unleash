@@ -26,9 +26,9 @@ type projectAccessResource struct {
 }
 
 type roleWithMembers struct {
-	Role   types.Int64   `tfsdk:"role"`
-	Users  types.List 	 `tfsdk:"users"`
-	Groups types.List 	 `tfsdk:"groups"`
+	Role   types.Int64       `tfsdk:"role"`
+	Users  []types.Int64 	 `tfsdk:"users"`
+	Groups []types.Int64 	 `tfsdk:"groups"`
 }
 
 type projectAccessResourceModel struct {
@@ -116,22 +116,18 @@ func (r *projectAccessResource) Create(ctx context.Context, req resource.CreateR
 		roleId := int32(r.Role.ValueInt64())
 		rolePayload.Id = &roleId
 		tflog.Debug(ctx, fmt.Sprintf("Creating role %v", roleId))
-		if !r.Users.IsNull() && !r.Users.IsUnknown() {
-			tflog.Debug(ctx, fmt.Sprintf("Adding users %v", r.Users))
-			resp.Diagnostics.Append(r.Users.ElementsAs(ctx, &rolePayload.Users, false)...)
+		// Handle users for this role
+		for _, user := range r.Users {
+			rolePayload.Users = append(rolePayload.Users, int32(user.ValueInt64()))
 		}
+		tflog.Debug(ctx, fmt.Sprintf("Added users: %v to role %v", rolePayload.Users, roleId))
 
-		if resp.Diagnostics.HasError() {
-			return
+		// Handle groups for this role
+		for _, group := range r.Groups {
+			rolePayload.Groups = append(rolePayload.Groups, int32(group.ValueInt64()))
 		}
+		tflog.Debug(ctx, fmt.Sprintf("Added groups: %v to role %v", rolePayload.Groups, roleId))
 
-		tflog.Debug(ctx, fmt.Sprintf("Adding Groups %v", r.Groups))
-		if !r.Groups.IsNull() && !r.Groups.IsUnknown() {
-			resp.Diagnostics.Append(r.Groups.ElementsAs(ctx, &rolePayload.Groups, false)...)
-		} else {
-			tflog.Debug(ctx, fmt.Sprintf("None found %v", r.Groups))
-			rolePayload.Groups = make([]int32, 0)
-		}
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -139,7 +135,7 @@ func (r *projectAccessResource) Create(ctx context.Context, req resource.CreateR
 	}
 	accessConfiguration := *unleash.NewProjectAccessConfigurationSchema(roles)
 
-	api_response, err := r.client.ProjectsAPI.SetProjectAccess(context.Background(), projectId).ProjectAccessConfigurationSchema(accessConfiguration).Execute()
+	api_response, err := r.client.ProjectsAPI.SetProjectAccess(ctx, projectId).ProjectAccessConfigurationSchema(accessConfiguration).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -172,7 +168,7 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 
 	projectId := *state.Project.ValueStringPointer()
 
-	_, api_response, err := r.client.ProjectsAPI.GetProjectAccess(context.Background(), projectId).Execute()
+	projectAccess, api_response, err := r.client.ProjectsAPI.GetProjectAccess(ctx, projectId).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -191,22 +187,60 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 	}
 
 
-	// Create a struct that represents a map by roleId having users and groups as lists of the struct
-	// unleash.ProjectAccessConfigurationSchemaRolesInner
-	// This is used to create a list of roles with their users and groups
-	// rolesMap := make(map[int64]unleash.ProjectAccessConfigurationSchemaRolesInner)
-	// for _, role := range projectAccess.Roles {
-	// 	createdRole := rolesMap[int64(role.Id)]
-	// 	if (createdRole == nil) {
-
-	// 	}
-	// 	role.Users, _ = basetypes.NewListValueFrom(ctx, types.StringType, role.Users)
-	// }
-
-	// state.Roles, _ = basetypes.NewListValueFrom(ctx, types.StringType, projectAccess.Roles)
+	state.Roles, err = transformToInternalRoles(projectAccess)
+	if err!= nil {
+		resp.Diagnostics.AddError(
+			"Unable to transform projectAccess",
+			err.Error(),
+		)
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading projectAccess data source", map[string]any{"success": true})
+}
+
+func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]roleWithMembers, error) {
+	var internalRoles []roleWithMembers
+
+	// Create a map for users and groups for efficient lookup
+	usersMap := make(map[int32][]int32)  // Role ID to User IDs
+	groupsMap := make(map[int32][]int32) // Role ID to Group IDs
+
+	for _, user := range accessSchema.Users {
+		for _, roleId := range user.Roles {
+			usersMap[roleId] = append(usersMap[roleId], user.Id)
+		}
+	}
+
+	for _, group := range accessSchema.Groups {
+		for _, roleId := range group.Roles {
+			groupsMap[roleId] = append(groupsMap[roleId], group.Id)
+		}
+	}
+
+	// Populate the internalRoles slice
+	for _, role := range accessSchema.Roles {
+		internalRole := roleWithMembers{
+			Role: types.Int64Value(int64(role.Id)),
+			Users: []types.Int64{},
+			Groups: []types.Int64{},
+		}
+
+		// Add users to the role
+		for _, userId := range usersMap[role.Id] {
+			internalRole.Users = append(internalRole.Users, types.Int64Value(int64(userId)))
+		}
+
+		// Add groups to the role
+		for _, groupId := range groupsMap[role.Id] {
+			internalRole.Groups = append(internalRole.Groups, types.Int64Value(int64(groupId)))
+		}
+
+		internalRoles = append(internalRoles, internalRole)
+	}
+
+	return internalRoles, nil
 }
 
 func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -226,7 +260,7 @@ func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateR
 
 	// req.State.Get(ctx, &state)
 
-	// api_response, err := r.client.ProjectAccesssAPI.UpdateProjectAccess(context.Background(), state.Id.ValueString()).UpdateProjectAccessSchema(updateProjectAccessSchema).Execute()
+	// api_response, err := r.client.ProjectAccesssAPI.UpdateProjectAccess(ctx, state.Id.ValueString()).UpdateProjectAccessSchema(updateProjectAccessSchema).Execute()
 
 	// if err != nil {
 	// 	resp.Diagnostics.AddError(
@@ -245,7 +279,7 @@ func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateR
 	// }
 
 	// // our update doesn't return the projectAccess, so we need to re-read it
-	// projectAccesss, api_response, err := r.client.ProjectAccesssAPI.GetProjectAccesss(context.Background()).Execute()
+	// projectAccesss, api_response, err := r.client.ProjectAccesssAPI.GetProjectAccesss(ctx).Execute()
 
 	// var projectAccess unleash.ProjectAccessSchema
 	// for _, p := range projectAccesss.ProjectAccesss {
