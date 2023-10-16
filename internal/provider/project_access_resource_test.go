@@ -16,6 +16,8 @@ func TestAccProjectAccessResource(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
+				// TODO with set access we can mess up the project access and it can end up without an owner which should not be allowed. Add this restriction in the backend
+				// Note: from the UI I can add a member role and then remove the owner leaving a project ownerless but with members.
 				Config: `
 					resource "unleash_project" "sample_project" {
 						id = "sample"

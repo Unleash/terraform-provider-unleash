@@ -26,9 +26,9 @@ type projectAccessResource struct {
 }
 
 type roleWithMembers struct {
-	Role   types.Int64       `tfsdk:"role"`
-	Users  []types.Int64 	 `tfsdk:"users"`
-	Groups []types.Int64 	 `tfsdk:"groups"`
+	Role   types.Int64   `tfsdk:"role"`
+	Users  []types.Int64 `tfsdk:"users"`
+	Groups []types.Int64 `tfsdk:"groups"`
 }
 
 type projectAccessResourceModel struct {
@@ -186,21 +186,13 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-
-	state.Roles, err = transformToInternalRoles(projectAccess)
-	if err!= nil {
-		resp.Diagnostics.AddError(
-			"Unable to transform projectAccess",
-			err.Error(),
-		)
-		return
-	}
+	state.Roles = transformToInternalRoles(projectAccess)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading projectAccess data source", map[string]any{"success": true})
 }
 
-func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]roleWithMembers, error) {
+func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]roleWithMembers) {
 	var internalRoles []roleWithMembers
 
 	// Create a map for users and groups for efficient lookup
@@ -222,8 +214,8 @@ func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]role
 	// Populate the internalRoles slice
 	for _, role := range accessSchema.Roles {
 		internalRole := roleWithMembers{
-			Role: types.Int64Value(int64(role.Id)),
-			Users: []types.Int64{},
+			Role:   types.Int64Value(int64(role.Id)),
+			Users:  []types.Int64{},
 			Groups: []types.Int64{},
 		}
 
@@ -240,7 +232,7 @@ func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]role
 		internalRoles = append(internalRoles, internalRole)
 	}
 
-	return internalRoles, nil
+	return internalRoles
 }
 
 func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
