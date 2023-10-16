@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -109,47 +110,9 @@ func (r *projectAccessResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	var projectId = *plan.Project.ValueStringPointer()
-	roles := []unleash.ProjectAccessConfigurationSchemaRolesInner{}
-	for _, r := range plan.Roles {
-		rolePayload := *unleash.NewProjectAccessConfigurationSchemaRolesInnerWithDefaults()
-		roleId := int32(r.Role.ValueInt64())
-		rolePayload.Id = &roleId
-		tflog.Debug(ctx, fmt.Sprintf("Creating role %v", roleId))
-		// Handle users for this role
-		for _, user := range r.Users {
-			rolePayload.Users = append(rolePayload.Users, int32(user.ValueInt64()))
-		}
-		tflog.Debug(ctx, fmt.Sprintf("Added users: %v to role %v", rolePayload.Users, roleId))
-
-		// Handle groups for this role
-		for _, group := range r.Groups {
-			rolePayload.Groups = append(rolePayload.Groups, int32(group.ValueInt64()))
-		}
-		tflog.Debug(ctx, fmt.Sprintf("Added groups: %v to role %v", rolePayload.Groups, roleId))
-
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		roles = append(roles, rolePayload)
-	}
-	accessConfiguration := *unleash.NewProjectAccessConfigurationSchema(roles)
-
-	api_response, err := r.client.ProjectsAPI.SetProjectAccess(ctx, projectId).ProjectAccessConfigurationSchema(accessConfiguration).Execute()
-
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read projectAccess",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	tflog.Info(ctx, fmt.Sprintf("Upserting %v", plan))
+	resp.Diagnostics.Append(r.upsertProjectAccess(ctx, plan)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -188,8 +151,82 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 
 	state.Roles = transformToInternalRoles(projectAccess)
 
+	tflog.Info(ctx, fmt.Sprintf("Read projectAccess %v", state))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading projectAccess data source", map[string]any{"success": true})
+}
+
+func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	tflog.Debug(ctx, "Preparing to update project access resource")
+	var plan projectAccessResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(r.upsertProjectAccess(ctx, plan)...)
+	
+	var state projectAccessResource
+	req.State.Get(ctx, &state)
+	
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	tflog.Debug(ctx, "Finished updating projectAccess data source", map[string]any{"success": true})
+}
+
+func (r *projectAccessResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	resp.Diagnostics.AddWarning("Resource Not Deleted", "The projectAccess resource was removed from the Terraform state, but not deleted from the actual system. This is to avoid potential mistakes. Instead of deleting projectAccess you may just delete the whole project")
+}
+
+/** Helper methods **/
+
+func (r *projectAccessResource) upsertProjectAccess(ctx context.Context, plan projectAccessResourceModel) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	var projectId = plan.Project.ValueString()
+	roles := []unleash.ProjectAccessConfigurationSchemaRolesInner{}
+	for _, r := range plan.Roles {
+		rolePayload := *unleash.NewProjectAccessConfigurationSchemaRolesInnerWithDefaults()
+		roleId := int32(r.Role.ValueInt64())
+		rolePayload.Id = &roleId
+		tflog.Debug(ctx, fmt.Sprintf("Creating role %v", roleId))
+		// Handle users for this role
+		for _, user := range r.Users {
+			rolePayload.Users = append(rolePayload.Users, int32(user.ValueInt64()))
+		}
+		tflog.Debug(ctx, fmt.Sprintf("Added users: %v to role %v", rolePayload.Users, roleId))
+
+		// Handle groups for this role
+		for _, group := range r.Groups {
+			rolePayload.Groups = append(rolePayload.Groups, int32(group.ValueInt64()))
+		}
+		tflog.Debug(ctx, fmt.Sprintf("Added groups: %v to role %v", rolePayload.Groups, roleId))
+
+		if diagnostics.HasError() {
+			return diagnostics
+		}
+		roles = append(roles, rolePayload)
+	}
+	accessConfiguration := *unleash.NewProjectAccessConfigurationSchema(roles)
+
+	api_response, err := r.client.ProjectsAPI.SetProjectAccess(ctx, projectId).ProjectAccessConfigurationSchema(accessConfiguration).Execute()
+
+	if err != nil {
+		diagnostics.AddError(
+			"Unable to read projectAccess",
+			err.Error(),
+		)
+	}
+
+	if api_response.StatusCode != 200 {
+		diagnostics.AddError(
+			"Unexpected HTTP error code received",
+			api_response.Status,
+		)
+	}
+	return diagnostics
 }
 
 func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) []roleWithMembers {
@@ -229,104 +266,11 @@ func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) []roleW
 			internalRole.Groups = append(internalRole.Groups, types.Int64Value(int64(groupId)))
 		}
 
-		internalRoles = append(internalRoles, internalRole)
+		// if both roles are empty, don't keep the role in the state
+		if (len(internalRole.Users) > 0) || (len(internalRole.Groups) > 0) {
+			internalRoles = append(internalRoles, internalRole)
+		}
 	}
 
 	return internalRoles
-}
-
-func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	tflog.Debug(ctx, "Preparing to update projectAccess resource")
-	var state projectAccessResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// updateProjectAccessSchema := *unleash.NewUpdateProjectAccessSchemaWithDefaults()
-	// updateProjectAccessSchema.Name = *state.Name.ValueStringPointer()
-	// if !state.Description.IsNull() {
-	// 	updateProjectAccessSchema.Description = state.Description.ValueStringPointer()
-	// }
-
-	// req.State.Get(ctx, &state)
-
-	// api_response, err := r.client.ProjectAccesssAPI.UpdateProjectAccess(ctx, state.Id.ValueString()).UpdateProjectAccessSchema(updateProjectAccessSchema).Execute()
-
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"Unable to update projectAccess ",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// if api_response.StatusCode != 200 {
-	// 	resp.Diagnostics.AddError(
-	// 		"Unexpected HTTP error code received",
-	// 		api_response.Status,
-	// 	)
-	// 	return
-	// }
-
-	// // our update doesn't return the projectAccess, so we need to re-read it
-	// projectAccesss, api_response, err := r.client.ProjectAccesssAPI.GetProjectAccesss(ctx).Execute()
-
-	// var projectAccess unleash.ProjectAccessSchema
-	// for _, p := range projectAccesss.ProjectAccesss {
-	// 	if p.Id == state.Id.ValueString() {
-	// 		projectAccess = p
-	// 	}
-	// }
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		fmt.Sprintf("Unable to Read ProjectAccess %s", state.Id.ValueString()),
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// if api_response.StatusCode != 200 {
-	// 	resp.Diagnostics.AddError(
-	// 		"Unexpected HTTP error code received",
-	// 		api_response.Status,
-	// 	)
-	// 	return
-	// }
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	tflog.Debug(ctx, "Finished updating projectAccess data source", map[string]any{"success": true})
-}
-
-func (r *projectAccessResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	tflog.Debug(ctx, "Preparing to delete projectAccess")
-	// var state projectAccessResourceModel
-	// diags := req.State.Get(ctx, &state)
-	// resp.Diagnostics.Append(diags...)
-
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
-
-	// api_response, err := r.client.ProjectAccesssAPI.DeleteProjectAccess(ctx, state.Id.ValueString()).Execute()
-
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"Unable to read projectAccess ",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// if api_response.StatusCode != 200 {
-	// 	resp.Diagnostics.AddError(
-	// 		"Unexpected HTTP error code received",
-	// 		api_response.Status,
-	// 	)
-	// 	return
-	// }
-
-	resp.State.RemoveResource(ctx)
-	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
 }
