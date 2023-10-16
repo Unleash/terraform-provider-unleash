@@ -192,7 +192,7 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 	tflog.Debug(ctx, "Finished reading projectAccess data source", map[string]any{"success": true})
 }
 
-func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) ([]roleWithMembers) {
+func transformToInternalRoles(accessSchema *unleash.ProjectAccessSchema) []roleWithMembers {
 	var internalRoles []roleWithMembers
 
 	// Create a map for users and groups for efficient lookup
