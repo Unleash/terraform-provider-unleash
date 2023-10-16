@@ -165,10 +165,10 @@ func (r *projectAccessResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	resp.Diagnostics.Append(r.upsertProjectAccess(ctx, plan)...)
-	
+
 	var state projectAccessResource
 	req.State.Get(ctx, &state)
-	
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
