@@ -32,7 +32,7 @@ resource "unleash_user" "%s" {
 }`, resource, name)
 }
 func TestAccUserResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") == "false" {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
 		t.Skip("Skipping enterprise tests")
 	}
 	resource.Test(t, resource.TestCase{

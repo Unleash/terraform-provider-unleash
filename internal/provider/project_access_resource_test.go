@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccProjectAccessResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") == "false" {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
 		t.Skip("Skipping enterprise tests")
 	}
 	resource.Test(t, resource.TestCase{
