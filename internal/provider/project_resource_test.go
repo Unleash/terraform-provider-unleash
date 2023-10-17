@@ -26,7 +26,7 @@ func testAccSampleProjectResourceWithNoDescription(name string, id string) strin
 }
 
 func TestAccProjectResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") == "false" {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
 		t.Skip("Skipping enterprise tests")
 	}
 	resource.Test(t, resource.TestCase{

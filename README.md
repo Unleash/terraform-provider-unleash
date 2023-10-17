@@ -45,6 +45,11 @@ Run **acceptance tests** which cover the provider and resources code
 TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
 
+To run enterprise tests (you have to make sure you're running an enterprise server)
+```shell
+UNLEASH_ENTERPRISE=true TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
+```
+
 or the following make target (although it will cache results if nothing changes)
 
 ```shell
@@ -53,7 +58,7 @@ make testacc
 
 ### Before pushing
 
-- `golangci-lint run` to lint the code
+- `golangci-lint run --fix` to lint the code
 - `go generate ./...` to update docs
 
 ## Using the provider
