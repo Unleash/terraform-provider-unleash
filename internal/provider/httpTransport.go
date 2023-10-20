@@ -32,7 +32,7 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	if err != nil {
 		fmt.Printf("Err:\n%s\n\n", err)
-		
+
 		// only log the response details in case of error to avoid leaking sensitive data
 		if t.EnableDebug && resp != nil {
 			responseDump, _ := httputil.DumpResponse(resp, true)
