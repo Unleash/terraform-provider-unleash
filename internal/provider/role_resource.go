@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,7 +35,7 @@ type permissionRef struct {
 }
 
 type roleResourceModel struct {
-	Id          types.Int64     `tfsdk:"id"`
+	Id          types.String    `tfsdk:"id"`
 	Name        types.String    `tfsdk:"name"`
 	Type        types.String    `tfsdk:"type"`
 	Description types.String    `tfsdk:"description"`
@@ -70,7 +71,7 @@ func (r *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "The name of this role.",
 				Required:    true,
 			},
-			"id": schema.Int64Attribute{
+			"id": schema.StringAttribute{
 				Description: "The id of this role.",
 				Computed:    true,
 			},
@@ -104,10 +105,9 @@ func (r *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 
 func (r *roleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import role resource")
-	var state roleResourceModel
+	
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished importing role resource", map[string]any{"success": true})
 }
 
@@ -163,7 +163,7 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createdRole := role.Roles
 	tflog.Debug(ctx, fmt.Sprintf("Created role: %+v", createdRole))
 	newState := roleResourceModel{
-		Id:          types.Int64Value(int64(createdRole.Id)),
+		Id:          types.StringValue(fmt.Sprintf("%v", createdRole.Id)),
 		Name:        types.StringValue(createdRole.Name),
 		Type:        types.StringValue(createdRole.Type),
 		Description: types.StringValue(*role.Roles.Description),
@@ -206,7 +206,7 @@ func (r *roleResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	roleId := fmt.Sprintf("%v", state.Id.ValueInt64())
+	roleId := state.Id.ValueString()
 	role, api_response, err := r.client.UsersAPI.GetRoleById(ctx, roleId).Execute()
 
 	if err != nil {
@@ -226,7 +226,7 @@ func (r *roleResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	state = roleResourceModel{
-		Id:   types.Int64Value(int64(role.Id)),
+		Id:   types.StringValue(fmt.Sprintf("%v", role.Id)),
 		Name: types.StringValue(role.Name),
 		Type: types.StringValue(role.Type),
 	}
@@ -306,7 +306,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	state = roleResourceModel{
-		Id:   types.Int64Value(int64(role.Id)),
+		Id:   types.StringValue(fmt.Sprintf("%v", role.Id)),
 		Name: types.StringValue(role.Name),
 		Type: types.StringValue(role.Type),
 	}
