@@ -63,7 +63,7 @@ resource "unleash_role" "project_role" {
 
 ### Read-Only
 
-- `id` (Number) The id of this role.
+- `id` (String) The id of this role.
 
 <a id="nestedatt--permissions"></a>
 ### Nested Schema for `permissions`
