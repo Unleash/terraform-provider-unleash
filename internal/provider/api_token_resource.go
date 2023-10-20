@@ -15,9 +15,8 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &apiTokenResource{}
-	_ resource.ResourceWithConfigure   = &apiTokenResource{}
-	_ resource.ResourceWithImportState = &apiTokenResource{}
+	_ resource.Resource              = &apiTokenResource{}
+	_ resource.ResourceWithConfigure = &apiTokenResource{}
 )
 
 // NewApiTokenResource is a helper function to simplify the provider implementation.
@@ -106,15 +105,6 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 	}
-}
-
-func (r *apiTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	tflog.Debug(ctx, "Preparing to import api token resource")
-	var state apiTokenResourceModel
-
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	tflog.Debug(ctx, "Finished importing api token data source", map[string]any{"success": true})
 }
 
 func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

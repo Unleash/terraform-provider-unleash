@@ -6,6 +6,7 @@ import (
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -94,9 +95,9 @@ func (r *projectAccessResource) Schema(_ context.Context, _ resource.SchemaReque
 
 func (r *projectAccessResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import projectAccess resource")
-	var state projectAccessResourceModel
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("project"), req, resp)
+
 	tflog.Debug(ctx, "Finished importing projectAccess data source", map[string]any{"success": true})
 }
 

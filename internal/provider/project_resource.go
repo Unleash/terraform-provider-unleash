@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -74,9 +75,9 @@ func (r *projectResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 
 func (r *projectResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import project resource")
-	var state projectResourceModel
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+
 	tflog.Debug(ctx, "Finished importing project data source", map[string]any{"success": true})
 }
 
