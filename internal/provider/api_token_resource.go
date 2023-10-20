@@ -6,6 +6,7 @@ import (
 	"time"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -110,10 +111,9 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 func (r *apiTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import api token resource")
-	var state apiTokenResourceModel
 
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("token_name"), req, resp)
+
 	tflog.Debug(ctx, "Finished importing api token data source", map[string]any{"success": true})
 }
 
@@ -239,7 +239,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 	var token unleash.ApiTokenSchema
 	for _, t := range tokens.Tokens {
-		if t.Secret == state.Secret.ValueString() {
+		if t.Secret == state.Secret.ValueString() || t.TokenName == state.TokenName.ValueString() {
 			token = t
 		}
 	}
