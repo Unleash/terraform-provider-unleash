@@ -105,7 +105,7 @@ func (r *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 
 func (r *roleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import role resource")
-	
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 
 	tflog.Debug(ctx, "Finished importing role resource", map[string]any{"success": true})

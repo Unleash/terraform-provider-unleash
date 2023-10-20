@@ -100,9 +100,9 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 
 func (r *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	tflog.Debug(ctx, "Preparing to import user resource")
-	
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-	
+
 	tflog.Debug(ctx, "Finished importing user data source", map[string]any{"success": true})
 }
 
