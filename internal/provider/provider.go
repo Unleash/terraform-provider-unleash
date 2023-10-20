@@ -84,7 +84,7 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	base_url := configValue(config.BaseUrl, "UNLEASH_URL")
+	base_url := strings.TrimSuffix(configValue(config.BaseUrl, "UNLEASH_URL"), "/")
 	authorization := configValue(config.Authorization, "AUTH_TOKEN")
 	mustHave("base_url", base_url, resp)
 	mustHave("authorization", authorization, resp)
