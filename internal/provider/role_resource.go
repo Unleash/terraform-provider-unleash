@@ -285,10 +285,9 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	updateRoleSchema.CreateRoleWithPermissionsSchemaAnyOf = &roleWithPermissions
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
-	roleId := fmt.Sprintf("%v", state.Id)
+	roleId := state.Id.ValueString()
 	roleWithVersion, api_response, err := r.client.UsersAPI.UpdateRole(context.Background(), roleId).CreateRoleWithPermissionsSchema(updateRoleSchema).Execute()
 
-	role := roleWithVersion.Roles
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to update role with id "+roleId,
@@ -305,6 +304,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
+	role := roleWithVersion.Roles
 	state = roleResourceModel{
 		Id:   types.StringValue(fmt.Sprintf("%v", role.Id)),
 		Name: types.StringValue(role.Name),
@@ -343,7 +343,7 @@ func (r *roleResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	api_response, err := r.client.UsersAPI.DeleteRole(ctx, fmt.Sprintf("%v", state.Id)).Execute()
+	api_response, err := r.client.UsersAPI.DeleteRole(ctx, state.Id.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
