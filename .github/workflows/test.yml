@@ -88,6 +88,5 @@ jobs:
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
-          TF_LOG: "debug"
           UNLEASH_ENTERPRISE: "${{ contains(matrix.docker-image, 'unleash-enterprise') }}"
         timeout-minutes: 3
