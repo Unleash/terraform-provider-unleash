@@ -130,7 +130,7 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 func versionCheck(ctx context.Context, client *unleash.APIClient, diags *diag.Diagnostics) {
 	unleashConfig, api_response, err := client.AdminUIAPI.GetUiConfig(ctx).Execute()
 
-	if (!ExpectedResponse(api_response, 200, diags, err)) {
+	if !ExpectedResponse(api_response, 200, diags, err) {
 		return
 	}
 

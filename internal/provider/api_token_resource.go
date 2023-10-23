@@ -144,7 +144,7 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 
 	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(createTokenRequest).Execute()
 
-	if (!ExpectedResponse(api_response, 201, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -200,7 +200,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	tokens, api_response, err := r.client.APITokensAPI.GetAllApiTokens(ctx).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 	var token unleash.ApiTokenSchema
@@ -259,7 +259,7 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 
 	api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -281,7 +281,7 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	api_response, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Secret.ValueString()).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

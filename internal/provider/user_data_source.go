@@ -95,7 +95,7 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
 	user, api_response, err := d.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

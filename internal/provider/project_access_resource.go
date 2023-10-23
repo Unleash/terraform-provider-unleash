@@ -134,7 +134,7 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 
 	projectAccess, api_response, err := r.client.ProjectsAPI.GetProjectAccess(ctx, projectId).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

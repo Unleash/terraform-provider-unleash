@@ -143,7 +143,7 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	role, api_response, err := r.client.UsersAPI.CreateRole(ctx).CreateRoleWithPermissionsSchema(createRoleRequest).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -197,7 +197,7 @@ func (r *roleResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	roleId := state.Id.ValueString()
 	role, api_response, err := r.client.UsersAPI.GetRoleById(ctx, roleId).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -264,7 +264,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	roleId := state.Id.ValueString()
 	roleWithVersion, api_response, err := r.client.UsersAPI.UpdateRole(ctx, roleId).CreateRoleWithPermissionsSchema(updateRoleSchema).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -309,7 +309,7 @@ func (r *roleResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 	api_response, err := r.client.UsersAPI.DeleteRole(ctx, state.Id.ValueString()).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

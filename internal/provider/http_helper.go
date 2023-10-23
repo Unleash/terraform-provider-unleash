@@ -21,7 +21,7 @@ func ExpectedResponse(response *http.Response, code int, diagnostics *diag.Diagn
 			err.Error(),
 		)
 	}
-	
+
 	if response.StatusCode != code {
 		diagnostics.AddError(
 			fmt.Sprintf("Unexpected HTTP error code received %s", response.Status),

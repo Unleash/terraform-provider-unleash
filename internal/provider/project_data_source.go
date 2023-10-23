@@ -76,7 +76,7 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	projects, api_response, err := d.client.ProjectsAPI.GetProjects(ctx).Execute()
 
-	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
+	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
