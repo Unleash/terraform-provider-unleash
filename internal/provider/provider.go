@@ -55,7 +55,7 @@ func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostic
 		return nil
 	}
 
-	tflog.Info(ctx, "Configuring Unleash client", structs.Map(config))
+	tflog.Debug(ctx, "Configuring Unleash client", structs.Map(config))
 	tflog.Info(ctx, "Base URL: "+base_url)
 	unleashConfig := unleash.NewConfiguration()
 	unleashConfig.Servers = unleash.ServerConfigurations{
@@ -68,7 +68,6 @@ func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostic
 
 	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
 	isDebug := logLevel == "debug" || logLevel == "trace"
-	tflog.Info(ctx, fmt.Sprintf("Is DEBUG: %v", isDebug))
 	unleashConfig.HTTPClient = httpClient(isDebug)
 	client := unleash.NewAPIClient(unleashConfig)
 
