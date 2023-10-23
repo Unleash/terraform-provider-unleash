@@ -3,7 +3,7 @@ module github.com/Unleash/terraform-provider-unleash
 go 1.18
 
 require (
-	github.com/Unleash/unleash-server-api-go v0.2.8
+	github.com/Unleash/unleash-server-api-go v0.2.9
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.4.1
@@ -18,7 +18,6 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
-	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
