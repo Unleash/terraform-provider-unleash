@@ -130,7 +130,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
 	// do we need to expose the invite link if send email is false?
 
-	user, api_response, err := r.client.UsersAPI.CreateUser(context.Background()).CreateUserSchema(createUserRequest).Execute()
+	user, api_response, err := r.client.UsersAPI.CreateUser(ctx).CreateUserSchema(createUserRequest).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -187,7 +187,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Get fresh data
-	user, api_response, err := r.client.UsersAPI.GetUser(context.Background(), state.Id.ValueString()).Execute()
+	user, api_response, err := r.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -257,7 +257,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
-	user, api_response, err := r.client.UsersAPI.UpdateUser(context.Background(), state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
+	user, api_response, err := r.client.UsersAPI.UpdateUser(ctx, state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

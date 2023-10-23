@@ -5,13 +5,16 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 
+	"github.com/Masterminds/semver"
 	"github.com/fatih/structs"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -42,6 +45,36 @@ func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataReq
 	resp.Version = p.version
 }
 
+func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostics *diag.Diagnostics) *unleash.APIClient {
+	base_url := strings.TrimSuffix(configValue(config.BaseUrl, "UNLEASH_URL"), "/")
+	authorization := configValue(config.Authorization, "AUTH_TOKEN")
+	mustHave("base_url", base_url, diagnostics)
+	mustHave("authorization", authorization, diagnostics)
+
+	if diagnostics.HasError() {
+		return nil
+	}
+
+	tflog.Info(ctx, "Configuring Unleash client", structs.Map(config))
+	tflog.Info(ctx, "Base URL: "+base_url)
+	unleashConfig := unleash.NewConfiguration()
+	unleashConfig.Servers = unleash.ServerConfigurations{
+		unleash.ServerConfiguration{
+			URL:         base_url,
+			Description: "Unleash server",
+		},
+	}
+	unleashConfig.AddDefaultHeader("Authorization", authorization)
+
+	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
+	isDebug := logLevel == "debug" || logLevel == "trace"
+	tflog.Info(ctx, fmt.Sprintf("Is DEBUG: %v", isDebug))
+	unleashConfig.HTTPClient = httpClient(isDebug)
+	client := unleash.NewAPIClient(unleashConfig)
+
+	return client
+}
+
 func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -66,13 +99,60 @@ func configValue(configValue basetypes.StringValue, env string) string {
 	return configValue.ValueString()
 }
 
-func mustHave(name string, value string, resp *provider.ConfigureResponse) {
+func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 	if value == "" {
-		resp.Diagnostics.AddError(
+		diagnostics.AddError(
 			"Unable to find "+name,
 			name+" cannot be an empty string",
 		)
 	}
+}
+
+func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
+	minimumVersion, _ := semver.NewVersion("5.5.6")
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("Unable read unleash version from string %s", version),
+			err.Error(),
+		)
+		return
+	}
+	
+	if (!minimumVersion.LessThan(v)) {
+		diags.AddError(
+			"Unsupported Unleash version",
+			fmt.Sprintf("You're using version %s, while the provider requires at least %s", version, minimumVersion),
+		)
+		return
+	}
+}
+
+func versionCheck(ctx context.Context, client *unleash.APIClient, diags *diag.Diagnostics) {
+	unleashConfig, api_response, err := client.AdminUIAPI.GetUiConfig(ctx).Execute()
+
+	if err != nil {
+		diags.AddError(
+			"Unable to get unleash configuration",
+			err.Error(),
+		)
+		return
+	}
+
+	if api_response.StatusCode != 200 {
+		diags.AddError(
+			"Unexpected HTTP error code received while checking version",
+			api_response.Status,
+		)
+		return
+	}
+
+	if !unleashConfig.VersionInfo.IsLatest {
+		diags.AddWarning("You're not using the latest Unleash version, consider upgrading",
+			fmt.Sprintf("You're using version %s, the latest unleash-server is %s, while the latest enterprise version is: %s", unleashConfig.Version, *unleashConfig.VersionInfo.Latest.Oss, *unleashConfig.VersionInfo.Latest.Enterprise))
+	}
+
+	checkIsSupportedVersion(unleashConfig.Version, diags)
 }
 
 func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -84,31 +164,14 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	base_url := strings.TrimSuffix(configValue(config.BaseUrl, "UNLEASH_URL"), "/")
-	authorization := configValue(config.Authorization, "AUTH_TOKEN")
-	mustHave("base_url", base_url, resp)
-	mustHave("authorization", authorization, resp)
+	// Configuration values are now available.
+	client := unleashClient(ctx, &config, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, "Unable to prepare client")
 		return
 	}
 
-	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
-	tflog.Info(ctx, "Configuring Unleash client", structs.Map(config))
-	tflog.Info(ctx, "Base URL: "+base_url)
-	unleashConfig := unleash.NewConfiguration()
-	unleashConfig.Servers = unleash.ServerConfigurations{
-		unleash.ServerConfiguration{
-			URL:         base_url,
-			Description: "Unleash server",
-		},
-	}
-	unleashConfig.AddDefaultHeader("Authorization", authorization)
-
-	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
-	isDebug := logLevel == "debug" || logLevel == "trace"
-	unleashConfig.HTTPClient = httpClient(isDebug)
-	client := unleash.NewAPIClient(unleashConfig)
+	versionCheck(ctx, client, &resp.Diagnostics)
 
 	// Make the Inventory client available during DataSource and Resource
 	// type Configure methods.

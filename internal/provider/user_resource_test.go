@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"testing"
 
@@ -85,12 +84,7 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 			URL: base_url,
 		},
 	}
-	configuration.HTTPClient = &http.Client{
-		Transport: &debugTransport{
-			Transport:   http.DefaultTransport,
-			EnableDebug: false, // set to true to see the call returning 404
-		},
-	}
+	configuration.HTTPClient = httpClient(false)
 	configuration.AddDefaultHeader("Authorization", authorization)
 	apiClient := unleash.NewAPIClient(configuration)
 
