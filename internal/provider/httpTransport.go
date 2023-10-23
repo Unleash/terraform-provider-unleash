@@ -35,12 +35,12 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	if err != nil {
 		tflog.Error(req.Context(), err.Error())
-	}
 
-	// only log the response details in case of error to avoid leaking sensitive data
-	if t.EnableDebug && resp != nil && (err != nil || (resp.StatusCode >= 200 && resp.StatusCode < 300)) {
-		responseDump, _ := httputil.DumpResponse(resp, true)
-		tflog.Debug(req.Context(), fmt.Sprintf("Response:\n%s", responseDump))
+		// only log the response details in case of error to avoid leaking sensitive data
+		if t.EnableDebug && resp != nil {
+			responseDump, _ := httputil.DumpResponse(resp, true)
+			tflog.Error(req.Context(), fmt.Sprintf("Response:\n%s", responseDump))
+		}
 	}
 
 	return resp, err
