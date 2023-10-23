@@ -14,6 +14,8 @@ github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c h1:kMFnB0vCcX
 github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
 github.com/Unleash/unleash-server-api-go v0.2.8 h1:Dx2UmeRQz9iznWAgba1SRcvJpaap1t8drkTt1VkW3Og=
 github.com/Unleash/unleash-server-api-go v0.2.8/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
+github.com/Unleash/unleash-server-api-go v0.2.9 h1:IfMQZBhhZy9voRoZo6w5vOqY16rsNMoQIkG+DwfZyMk=
+github.com/Unleash/unleash-server-api-go v0.2.9/go.mod h1:w0ZJ50HuUBS50Wn8I8TYW8RPcR5vqSbRCa9DcRgVNvw=
 github.com/acomagu/bufpipe v1.0.4 h1:e3H4WUzM3npvo5uv95QuJM3cQspFNtFBzvJ2oNjKIDQ=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

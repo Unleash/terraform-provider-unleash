@@ -3,7 +3,7 @@ module github.com/Unleash/terraform-provider-unleash
 go 1.18
 
 require (
-	github.com/Unleash/unleash-server-api-go v0.2.8
+	github.com/Unleash/unleash-server-api-go v0.2.9
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.4.1
