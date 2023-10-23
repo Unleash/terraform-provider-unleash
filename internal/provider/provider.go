@@ -152,7 +152,7 @@ func versionCheck(ctx context.Context, client *unleash.APIClient, diags *diag.Di
 	}
 
 	checkIsSupportedVersion(unleashConfig.Version, diags)
-	fmt.Printf("Found a supported Unleash version: %s\n", unleashConfig.Version)
+	tflog.Info(ctx, fmt.Sprintf("Found a supported Unleash version: %s", unleashConfig.Version))
 }
 
 func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
