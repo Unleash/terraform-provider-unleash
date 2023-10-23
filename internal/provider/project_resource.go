@@ -100,19 +100,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 
 	project, api_response, err := r.client.ProjectsAPI.CreateProject(ctx).CreateProjectSchema(createProjectRequest).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read project ",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 201 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 201, &resp.Diagnostics, err)) {
 		return
 	}
 
@@ -145,19 +133,7 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read Project %s", state.Id.ValueString()),
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
 		return
 	}
 
@@ -193,19 +169,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	api_response, err := r.client.ProjectsAPI.UpdateProject(ctx, state.Id.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to update project ",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
 		return
 	}
 
@@ -218,19 +182,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 			project = p
 		}
 	}
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read Project %s", state.Id.ValueString()),
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
 		return
 	}
 
@@ -259,19 +211,7 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.Id.ValueString()).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read project ",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
 		return
 	}
 

@@ -76,19 +76,7 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	projects, api_response, err := d.client.ProjectsAPI.GetProjects(ctx).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read projects",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if (!ExpectedResponse(api_response, 200, &resp.Diagnostics, err)) {
 		return
 	}
 
