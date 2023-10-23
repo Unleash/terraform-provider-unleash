@@ -38,7 +38,6 @@ func testAccPreCheck(_ *testing.T) {
 	envOrDefault("UNLEASH_ENTERPRISE", "false")
 }
 
-
 func Test_provider_checkIsSupportedVersion_556(t *testing.T) {
 	var diags diag.Diagnostics
 	CheckIsSupportedVersion("5.5.6", &diags)

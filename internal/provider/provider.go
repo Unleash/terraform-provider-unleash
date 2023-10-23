@@ -118,8 +118,8 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 		)
 		return
 	}
-	
-	if (!minimumVersion.LessThan(v)) {
+
+	if !minimumVersion.LessThan(v) {
 		diags.AddError(
 			"Unsupported Unleash version",
 			fmt.Sprintf("You're using version %s, while the provider requires at least %s", version, minimumVersion),
