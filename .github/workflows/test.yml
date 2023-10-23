@@ -62,7 +62,7 @@ jobs:
           - "1.3.*"
           - "1.4.*"
         docker-image:
-          - "ghcr.io/ivarconr/unleash-enterprise:5.5.6-terraform.0" # this is a pre-release, latest still does not support set project access
+          - "ghcr.io/ivarconr/unleash-enterprise:5.6.0-terraform-rc" # release candidate
           - "unleashorg/unleash-server:latest"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
