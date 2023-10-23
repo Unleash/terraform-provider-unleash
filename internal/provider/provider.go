@@ -108,7 +108,7 @@ func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 }
 
 func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
-	minimumVersion, _ := semver.NewVersion("5.5.6")
+	minimumVersion, _ := semver.NewVersion("5.6.0-0") // -0 is a hack to make 5.6.0 pre release version acceptable
 	v, err := semver.NewVersion(version)
 	if err != nil {
 		diags.AddError(
@@ -118,7 +118,7 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 		return
 	}
 
-	if !minimumVersion.LessThan(v) {
+	if v.Compare(minimumVersion) < 0 {
 		diags.AddError(
 			"Unsupported Unleash version",
 			fmt.Sprintf("You're using version %s, while the provider requires at least %s", version, minimumVersion),
