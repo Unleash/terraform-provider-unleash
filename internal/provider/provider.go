@@ -173,6 +173,10 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	versionCheck(ctx, client, &resp.Diagnostics)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Make the Inventory client available during DataSource and Resource
 	// type Configure methods.
 	resp.DataSourceData = client
