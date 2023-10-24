@@ -286,7 +286,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 	roleId := state.Id.ValueString()
-	roleWithVersion, api_response, err := r.client.UsersAPI.UpdateRole(context.Background(), roleId).CreateRoleWithPermissionsSchema(updateRoleSchema).Execute()
+	roleWithVersion, api_response, err := r.client.UsersAPI.UpdateRole(ctx, roleId).CreateRoleWithPermissionsSchema(updateRoleSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

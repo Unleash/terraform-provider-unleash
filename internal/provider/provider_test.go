@@ -7,9 +7,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/stretchr/testify/assert"
 )
+
+var CheckIsSupportedVersion = checkIsSupportedVersion
 
 // testAccProtoV6ProviderFactories are used to instantiate a provider during
 // acceptance testing. The factory function will be invoked for every Terraform
@@ -32,4 +36,24 @@ func testAccPreCheck(_ *testing.T) {
 	envOrDefault("UNLEASH_URL", "http://localhost:4242")
 	envOrDefault("AUTH_TOKEN", "*:*.unleash-insecure-admin-api-token")
 	envOrDefault("UNLEASH_ENTERPRISE", "false")
+}
+
+func Test_provider_checkIsSupportedVersion_556(t *testing.T) {
+	var diags diag.Diagnostics
+	CheckIsSupportedVersion("5.5.6", &diags)
+	t.Log(diags)
+	assert.True(t, diags.HasError())
+}
+
+func Test_provider_checkIsSupportedVersion_556_terraform(t *testing.T) {
+	var diags diag.Diagnostics
+	CheckIsSupportedVersion("5.6.0-terraform-rc", &diags)
+	t.Log(diags)
+	assert.False(t, diags.HasError())
+}
+
+func Test_provider_checkIsSupportedVersion_560(t *testing.T) {
+	var diags diag.Diagnostics
+	CheckIsSupportedVersion("5.6.0", &diags)
+	assert.False(t, diags.HasError())
 }

@@ -44,7 +44,7 @@ func TestAccProjectAccessResource(t *testing.T) {
 						project = unleash_project.sample_project.id
 						roles = [
 							{
-								role = data.unleash_role.project_member_role.id
+								role = data.unleash_role.project_owner_role.id
 								users = [
 									unleash_user.test_user.id
 								]

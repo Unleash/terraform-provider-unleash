@@ -210,7 +210,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	tokens, api_response, err := r.client.APITokensAPI.GetAllApiTokens(context.Background()).Execute()
+	tokens, api_response, err := r.client.APITokensAPI.GetAllApiTokens(ctx).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -281,7 +281,7 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
-	api_response, err := r.client.APITokensAPI.UpdateApiToken(context.Background(), state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
+	api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
 
 	if err != nil {
 		resp.Diagnostics.AddError(

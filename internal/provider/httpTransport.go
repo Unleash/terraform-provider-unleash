@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 func httpClient(debug bool) *http.Client {
@@ -21,22 +23,23 @@ type debugTransport struct {
 }
 
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	tflog.Info(req.Context(), fmt.Sprintf("Enable debug logging %v", t.EnableDebug))
 	if t.EnableDebug {
 		// Log the request details
 		requestDump, _ := httputil.DumpRequestOut(req, true)
-		fmt.Printf("Request:\n%s\n\n", requestDump)
+		tflog.Debug(req.Context(), fmt.Sprintf("Request:\n%s", requestDump))
 	}
 
 	// Make the actual request
 	resp, err := t.Transport.RoundTrip(req)
 
 	if err != nil {
-		fmt.Printf("Err:\n%s\n\n", err)
+		tflog.Error(req.Context(), err.Error())
 
 		// only log the response details in case of error to avoid leaking sensitive data
 		if t.EnableDebug && resp != nil {
 			responseDump, _ := httputil.DumpResponse(resp, true)
-			fmt.Printf("Response:\n%s\n\n", responseDump)
+			tflog.Error(req.Context(), fmt.Sprintf("Response:\n%s", responseDump))
 		}
 	}
 
