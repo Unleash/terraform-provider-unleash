@@ -117,7 +117,7 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 		)
 		return
 	}
-
+	
 	if v.Compare(minimumVersion) < 0 {
 		diags.AddError(
 			"Unsupported Unleash version",
