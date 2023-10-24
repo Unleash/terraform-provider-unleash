@@ -81,7 +81,7 @@ func (d *roleDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	roles, api_response, err := d.client.UsersAPI.GetRoles(ctx).Execute()
 
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

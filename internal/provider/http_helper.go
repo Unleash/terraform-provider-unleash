@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-func ExpectedResponse(response *http.Response, code int, diagnostics *diag.Diagnostics, err error) bool {
+func ValidateApiResponse(response *http.Response, code int, diagnostics *diag.Diagnostics, err error) bool {
 	if response == nil {
 		diagnostics.AddError(
 			"Unable to call api, response is nil",

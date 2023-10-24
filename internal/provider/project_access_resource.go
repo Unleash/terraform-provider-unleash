@@ -134,7 +134,7 @@ func (r *projectAccessResource) Read(ctx context.Context, req resource.ReadReque
 
 	projectAccess, api_response, err := r.client.ProjectsAPI.GetProjectAccess(ctx, projectId).Execute()
 
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -202,7 +202,7 @@ func (r *projectAccessResource) upsertProjectAccess(ctx context.Context, plan pr
 
 	api_response, err := r.client.ProjectsAPI.SetProjectAccess(ctx, projectId).ProjectAccessConfigurationSchema(accessConfiguration).Execute()
 
-	ExpectedResponse(api_response, 200, &diagnostics, err)
+	ValidateApiResponse(api_response, 200, &diagnostics, err)
 
 	return diagnostics
 }

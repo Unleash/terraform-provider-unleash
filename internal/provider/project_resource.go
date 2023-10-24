@@ -100,7 +100,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 
 	project, api_response, err := r.client.ProjectsAPI.CreateProject(ctx).CreateProjectSchema(createProjectRequest).Execute()
 
-	if !ExpectedResponse(api_response, 201, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -133,7 +133,7 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -169,7 +169,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	api_response, err := r.client.ProjectsAPI.UpdateProject(ctx, state.Id.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
 
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -182,7 +182,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 			project = p
 		}
 	}
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -211,7 +211,7 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	api_response, err := r.client.ProjectsAPI.DeleteProject(ctx, state.Id.ValueString()).Execute()
 
-	if !ExpectedResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
