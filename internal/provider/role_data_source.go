@@ -81,19 +81,7 @@ func (d *roleDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	roles, api_response, err := d.client.UsersAPI.GetRoles(ctx).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to read roles",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

@@ -144,19 +144,7 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 
 	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(createTokenRequest).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create Api Token",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 201 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -212,19 +200,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	tokens, api_response, err := r.client.APITokensAPI.GetAllApiTokens(ctx).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read Api Token %s", state.Secret.ValueString()),
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 	var token unleash.ApiTokenSchema
@@ -283,19 +259,7 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 
 	api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update Api Token",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -317,19 +281,7 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	api_response, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Secret.ValueString()).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Delete User",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

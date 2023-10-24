@@ -132,19 +132,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	user, api_response, err := r.client.UsersAPI.CreateUser(ctx).CreateUserSchema(createUserRequest).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create User",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 201 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -189,19 +177,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	// Get fresh data
 	user, api_response, err := r.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Read User %s", state.Id.ValueString()),
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -259,19 +235,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	user, api_response, err := r.client.UsersAPI.UpdateUser(ctx, state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update User",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
@@ -310,19 +274,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.Id.ValueString()).Execute()
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Delete User",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

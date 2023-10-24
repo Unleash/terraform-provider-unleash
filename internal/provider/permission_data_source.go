@@ -101,19 +101,7 @@ func (d *permissionDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	permissions, api_response, err := d.client.AuthAPI.GetPermissions(ctx).Execute()
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read Permissions",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		resp.Diagnostics.AddError(
-			"Unexpected HTTP error code received",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 

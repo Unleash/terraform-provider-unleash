@@ -130,19 +130,7 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 func versionCheck(ctx context.Context, client *unleash.APIClient, diags *diag.Diagnostics) {
 	unleashConfig, api_response, err := client.AdminUIAPI.GetUiConfig(ctx).Execute()
 
-	if err != nil {
-		diags.AddError(
-			"Unable to get unleash configuration",
-			err.Error(),
-		)
-		return
-	}
-
-	if api_response.StatusCode != 200 {
-		diags.AddError(
-			"Unexpected HTTP error code received while checking version",
-			api_response.Status,
-		)
+	if !ValidateApiResponse(api_response, 200, diags, err) {
 		return
 	}
 
