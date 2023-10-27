@@ -66,7 +66,7 @@ module "project" {
 }
 
 resource "unleash_role" "gatekeeper_role" {
-  name        = "gatekeeper"
+  name        = "Gatekeeper"
   type        = "root-custom"
   description = "This role can create and manage API keys"
   permissions = [

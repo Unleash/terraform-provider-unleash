@@ -11,7 +11,7 @@ resource "unleash_project" "project_2" {
 }
 
 resource "unleash_role" "gatekeeper_role" {
-  name        = "gatekeeper"
+  name        = "Gatekeeper"
   type        = "root-custom"
   description = "The token guardian without the ability of reading the keys"
   permissions = [
