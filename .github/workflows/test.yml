@@ -62,8 +62,8 @@ jobs:
           - "1.3.*"
           - "1.4.*"
         docker-image:
-          - "ghcr.io/ivarconr/unleash-enterprise:5.6.0-terraform-rc" # release candidate
-          - "unleashorg/unleash-server:main-edge-18.17.1-alpine" # tip of main which is 5.6.0-main
+          - "ghcr.io/ivarconr/unleash-enterprise:5.6.0"
+          - "unleashorg/unleash-server:latest"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
