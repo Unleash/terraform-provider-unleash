@@ -6,16 +6,19 @@
 
 ## Overview
 
-This terraform provider is not intended to support everything in Unleash. The main focus is to support the initial setup and configuration of an Unleash instance.
+This terraform provider is not intended to support everything in Unleash. The main focus is to support Unleash's initial setup and configuration.
 
-Because feature flags should be short lived, we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
+Because [feature flags should be short-lived]([url](https://docs.getunleash.io/topics/feature-flags/short-lived-feature-flags)), we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
 
 If you're interested in using Terraform to manage feature flags, you can use [philips-labs/unleash provider](https://registry.terraform.io/providers/philips-labs/unleash/latest/docs) that supports managing feature flags.
+
+Note that some resources are only available for the enterprise version of Unleash.
 
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
 - [Go](https://golang.org/doc/install) >= 1.19
+- Unleash server v5.6.0
 
 ## Building The Provider
 
