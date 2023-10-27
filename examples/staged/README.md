@@ -39,16 +39,16 @@ make TF_LOG=debug
 
 
 ## Stages
-### Stage 1
+### [Stage 1](./stage_1)
 Create a first project and a custom root roles
 
-### Stage 2
+### [Stage 2](./stage_2)
 Incorporates project roles and a few users.
 It also imports the default project that can then be used later on.
 
-### Stage 3
+### [Stage 3](./stage_3)
 Removes one user and creates some api tokens, modifies users and projects
 
-### Stage 4
+### [Stage 4](./stage_4)
 Reorganizes everything. It removes old projects and creates new ones. It also creates new users and api tokens.
 It defines a module to simplify the creation of projects and uses locals to declare what it wants to create.
