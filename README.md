@@ -8,7 +8,7 @@
 
 This terraform provider is not intended to support everything in Unleash. The main focus is to support Unleash's initial setup and configuration.
 
-Because [feature flags should be short-lived]([url](https://docs.getunleash.io/topics/feature-flags/short-lived-feature-flags)), we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
+Because [feature flags should be short-lived](https://docs.getunleash.io/topics/feature-flags/short-lived-feature-flags), we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
 
 If you're interested in using Terraform to manage feature flags, you can use [philips-labs/unleash provider](https://registry.terraform.io/providers/philips-labs/unleash/latest/docs) that supports managing feature flags.
 
