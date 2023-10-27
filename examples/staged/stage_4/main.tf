@@ -1,7 +1,7 @@
 locals {
   users = {
-    justin = "Justin Time"
-    ivan = "Ivan Issue"
+    justin  = "Justin Time"
+    ivan    = "Ivan Issue"
     winston = "Winston Golang"
   }
 
@@ -11,45 +11,45 @@ locals {
       tokens = [
         {
           environment = "development"
-          type = "client"
+          type        = "client"
         },
         {
           environment = "development"
-          type = "frontend"
+          type        = "frontend"
         }
       ]
       owner = unleash_user.users["justin"].id
-      users = [ "justin", "ivan" ]
+      users = ["justin", "ivan"]
     }
-     third = {
+    third = {
       name = "NullPointer's Paradise 2",
       tokens = [
         {
           environment = "development"
-          type = "client"
+          type        = "client"
         },
         {
           environment = "development"
-          type = "frontend"
+          type        = "frontend"
         }
       ]
       owner = unleash_user.users["justin"].id
-      users = [ "justin", "ivan" ]
+      users = ["justin", "ivan"]
     }
     second = {
       name = "BranchingOut",
       tokens = [
         {
           environment = "development"
-          type = "client"
+          type        = "client"
         },
         {
           environment = "production"
-          type = "client"
+          type        = "client"
         },
       ]
       owner = unleash_user.users["justin"].id
-      users = [ "ivan", "winston" ]
+      users = ["ivan", "winston"]
     }
   }
 }
@@ -57,12 +57,12 @@ locals {
 module "project" {
   for_each = local.projects
 
-  source = "./project"
-  id = each.key
-  name = each.value.name
-  tokens = each.value.tokens
+  source  = "./project"
+  id      = each.key
+  name    = each.value.name
+  tokens  = each.value.tokens
   members = [for u in each.value.users : unleash_user.users[u].id]
-  owner = each.value.owner
+  owner   = each.value.owner
 }
 
 resource "unleash_role" "gatekeeper_role" {

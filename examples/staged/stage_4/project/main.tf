@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     unleash = {
-      source  = "Unleash/unleash"
+      source = "Unleash/unleash"
     }
   }
 }
@@ -20,12 +20,12 @@ variable "owner" {
 
 variable "members" {
   description = "List of ids of the members of the project."
-  default = []
+  default     = []
 }
 
 variable "tokens" {
   description = "List of tokens for the project."
-  default = []
+  default     = []
 }
 
 resource "unleash_project" "projects" {
@@ -56,16 +56,16 @@ data "unleash_role" "project_member_role" {
 resource "unleash_project_access" "access" {
   project = var.id
 
-  depends_on  = [unleash_project.projects]
+  depends_on = [unleash_project.projects]
   roles = [
     {
-      role = data.unleash_role.project_owner_role.id
-      users = [var.owner]
+      role   = data.unleash_role.project_owner_role.id
+      users  = [var.owner]
       groups = []
     },
     {
-      role = data.unleash_role.project_member_role.id
-      users = var.members
+      role   = data.unleash_role.project_member_role.id
+      users  = var.members
       groups = []
     },
   ]
