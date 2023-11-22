@@ -126,6 +126,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	createUserRequest.Username = plan.Username.ValueStringPointer()
 	createUserRequest.Email = plan.Email.ValueStringPointer()
 	createUserRequest.RootRole = unleash.Int32AsCreateUserSchemaRootRole(&roleId32)
+	createUserRequest.Password = plan.Password.ValueStringPointer()
 	// Should SendEmail be part of the state? How do we model ephimeral input state in terraform?
 	createUserRequest.SendEmail = plan.SendEmail.ValueBoolPointer()
 	// do we need to expose the invite link if send email is false?
