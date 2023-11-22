@@ -4,11 +4,14 @@ page_title: "unleash Provider"
 subcategory: ""
 description: |-
   Interface with Unleash server API https://docs.getunleash.io/reference/api/unleash. This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
+      You can check a complete example [here](https://github.com/Unleash/terraform-provider-unleash/tree/main/examples/staged) under stage_4 folder.
 ---
 
 # unleash Provider
 
 Interface with [Unleash server API](https://docs.getunleash.io/reference/api/unleash). This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
+
+		You can check a complete example [here](https://github.com/Unleash/terraform-provider-unleash/tree/main/examples/staged) under stage_4 folder.
 
 ## Example Usage
 
