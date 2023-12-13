@@ -76,6 +76,6 @@ resource "unleash_project_access" "sample_project_access" {
 
 Required:
 
-- `groups` (List of Number) List of projects with this role assigned.
+- `groups` (Set of Number) List of projects with this role assigned.
 - `role` (Number) The role identifier.
-- `users` (List of Number) List of users with this role assigned.
+- `users` (Set of Number) List of users with this role assigned.

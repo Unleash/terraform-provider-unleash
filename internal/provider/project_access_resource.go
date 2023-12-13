@@ -76,12 +76,12 @@ func (r *projectAccessResource) Schema(_ context.Context, _ resource.SchemaReque
 							Description: "The role identifier.",
 							Required:    true,
 						},
-						"users": schema.ListAttribute{
+						"users": schema.SetAttribute{
 							Description: "List of users with this role assigned.",
 							Required:    true,
 							ElementType: types.Int64Type,
 						},
-						"groups": schema.ListAttribute{
+						"groups": schema.SetAttribute{
 							Description: "List of projects with this role assigned.",
 							Required:    true,
 							ElementType: types.Int64Type,
