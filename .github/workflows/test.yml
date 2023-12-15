@@ -1,4 +1,3 @@
-# Terraform Provider testing workflow.
 name: Tests
 
 # This GitHub action runs your tests for each pull request and push.
@@ -10,7 +9,7 @@ on:
     paths-ignore:
       - "README.md"
 
-# Testing only needs permissions to read the repository contents.
+# Testing only needs permissions to read the repository contents and read package for Unleash
 permissions:
   contents: read
   packages: read
