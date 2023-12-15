@@ -78,6 +78,7 @@ jobs:
           terraform_wrapper: false
       - run: go mod download
       - name: Login to ghcr
+        if: contains(matrix.docker-image, 'unleash-enterprise')
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
