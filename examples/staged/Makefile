@@ -1,7 +1,7 @@
 default: tests
 
 ifndef UNLEASH_DOCKER_IMAGE
-override UNLEASH_DOCKER_IMAGE = ghcr.io/ivarconr/unleash-enterprise:5.6.0-terraform-rc
+override UNLEASH_DOCKER_IMAGE = ghcr.io/ivarconr/unleash-enterprise:latest
 endif
 
 .PHONY: tests
