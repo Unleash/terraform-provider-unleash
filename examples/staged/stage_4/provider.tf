@@ -2,7 +2,7 @@ terraform {
   required_providers {
     unleash = {
       source  = "Unleash/unleash"
-      version = "1.0.0"
+      version = "~> 1"
     }
   }
 }
