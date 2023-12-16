@@ -9,7 +9,7 @@ for STAGE in ${STAGES}; do
     echo "======================= Applying ${STAGE} ========================"
     echo "================================================================="
     cd ${STAGE}
-    terraform init # in case version was updated
+    terraform init -upgrade # in case version was updated
     terraform apply -state=../terraform.tfstate -auto-approve # using state from parent dir
     cd ..
 done

@@ -11,25 +11,25 @@ If you just want to look at what Unleash managed with Terraform looks like, chec
 - [Bash](https://www.gnu.org/software/bash/) >= 5.1.8
 - Access to [Unleash Enterprise](https://www.getunleash.io/) docker image
 
-### Running the steps
-A makefile makes it easy to run the steps. The steps are numbered and can be run in order. The steps are also described in the sections below.
+### Running the stages
+A makefile makes it easy to run the stages. The stages are numbered and can be run in order. The stages are also described in the sections below.
 
 By default it will leave an instance of Unleash running at http://localhost:4242 so you can check the results. If you want to clean up the docker containers, run `make clean`.
 
-Note that every time you run `make` it will perform a cleanup before running the steps.
+Note that every time you run `make` it will perform a cleanup before running the stages.
 
-* Run `make` to run all the steps
+* Run `make` to run all the stages
 ```shell
 make
 ```
 
-* Run each one of the steps individually (useful for debugging)
+* Run each one of the stages individually (useful for debugging)
 ```shell
-make STEPS="step_1"
+make STAGES="stage_1"
 # or
-make STEPS="step_1 step_2"
-# because the steps are stateless, you can run them in any order (one by one or just execute any)
-make STEPS="step_4"
+make STAGES="stage_1 stage_2"
+# because the stages are stateless, you can run them in any order (one by one or just execute any)
+make STAGES="stage_4"
 ```
 
 * Add debug information
