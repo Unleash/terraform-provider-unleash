@@ -82,7 +82,7 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				Optional:            true,
 			},
 			"authorization": schema.StringAttribute{
-				MarkdownDescription: "Authhorization token for Unleash API",
+                                MarkdownDescription: "Authorization token for Unleash API",
 				Optional:            true,
 				Sensitive:           true,
 			},
