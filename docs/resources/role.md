@@ -58,7 +58,7 @@ resource "unleash_role" "project_role" {
 
 - `description` (String) A more detailed description of the role and what use it's intended for.
 - `name` (String) The name of this role.
-- `permissions` (Attributes List) A more detailed description of the role and what use it's intended for. (see [below for nested schema](#nestedatt--permissions))
+- `permissions` (Attributes Set) A more detailed description of the role and what use it's intended for. (see [below for nested schema](#nestedatt--permissions))
 - `type` (String) A role can either be a global root role (applies to all roles) or a role role.
 
 ### Read-Only

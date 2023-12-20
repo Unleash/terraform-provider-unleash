@@ -51,7 +51,7 @@ resource "unleash_api_token" "admin_no_expire" {
 - `environment` (String) An environment the token has access to.
 - `expires_at` (String) When the token expires
 - `project` (String) A project the token belongs to.
-- `projects` (List of String) The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.
+- `projects` (Set of String) The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.
 - `token_name` (String) The name of the token.
 - `type` (String) The type of the token.
 

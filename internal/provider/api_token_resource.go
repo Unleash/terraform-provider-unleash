@@ -93,7 +93,7 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 			},
-			"projects": schema.ListAttribute{
+			"projects": schema.SetAttribute{
 				Description: "The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.",
 				Optional:    true,
 				Computed:    true,
