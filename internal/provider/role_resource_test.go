@@ -1,11 +1,44 @@
 package provider
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+// customCheckRolePermissionExists checks if a specific permission (and optionally an environment) exists in a role's permissions list.
+func customCheckRolePermissionExists(resourceName string, permissionName string, environment ...string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Not found: %s", resourceName)
+		}
+
+		for i := 0; ; i++ {
+			permissionAttrKey := fmt.Sprintf("permissions.%d.name", i)
+			permission, ok := rs.Primary.Attributes[permissionAttrKey]
+			if !ok {
+				break // Exit the loop if no more permissions are found
+			}
+			if permission == permissionName {
+				// Check for environment if provided
+				if len(environment) > 0 {
+					environmentAttrKey := fmt.Sprintf("permissions.%d.environment", i)
+					env, ok := rs.Primary.Attributes[environmentAttrKey]
+					if !ok || env != environment[0] {
+						continue // Skip to the next permission if environment does not match
+					}
+				}
+				return nil
+			}
+		}
+
+		return fmt.Errorf("Permission %s with environment %v not found in resource %s", permissionName, environment, resourceName)
+	}
+}
 
 func TestAccRoleResource(t *testing.T) {
 	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
@@ -31,8 +64,8 @@ func TestAccRoleResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_role.custom_root_role", "id"),
 					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "name", "A custom role"),
 					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "type", "root-custom"),
-					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "permissions.0.name", "CREATE_PROJECT"),
-					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "permissions.1.name", "UPDATE_PROJECT"),
+					customCheckRolePermissionExists("unleash_role.custom_root_role", "CREATE_PROJECT"),
+					customCheckRolePermissionExists("unleash_role.custom_root_role", "UPDATE_PROJECT"),
 				),
 			},
 			// Test update name and permissions
@@ -52,8 +85,8 @@ func TestAccRoleResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_role.custom_root_role", "id"),
 					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "name", "Renamed custom role"),
 					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "type", "root-custom"),
-					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "permissions.0.name", "CREATE_SEGMENT"),
-					resource.TestCheckResourceAttr("unleash_role.custom_root_role", "permissions.1.name", "UPDATE_SEGMENT"),
+					customCheckRolePermissionExists("unleash_role.custom_root_role", "CREATE_SEGMENT"),
+					customCheckRolePermissionExists("unleash_role.custom_root_role", "UPDATE_SEGMENT"),
 				),
 			},
 			{
@@ -76,10 +109,9 @@ func TestAccRoleResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_role.project_role", "id"),
 					resource.TestCheckResourceAttr("unleash_role.project_role", "name", "Custom project role"),
 					resource.TestCheckResourceAttr("unleash_role.project_role", "type", "custom"),
-					resource.TestCheckResourceAttr("unleash_role.project_role", "permissions.0.name", "CREATE_FEATURE"),
-					resource.TestCheckResourceAttr("unleash_role.project_role", "permissions.1.name", "DELETE_FEATURE"),
-					resource.TestCheckResourceAttr("unleash_role.project_role", "permissions.2.name", "UPDATE_FEATURE_ENVIRONMENT"),
-					resource.TestCheckResourceAttr("unleash_role.project_role", "permissions.2.environment", "development"),
+					customCheckRolePermissionExists("unleash_role.project_role", "CREATE_FEATURE"),
+					customCheckRolePermissionExists("unleash_role.project_role", "DELETE_FEATURE"),
+					customCheckRolePermissionExists("unleash_role.project_role", "UPDATE_FEATURE_ENVIRONMENT", "development"),
 				),
 			},
 		},

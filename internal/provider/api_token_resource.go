@@ -40,7 +40,7 @@ type apiTokenResourceModel struct {
 	// The project this token belongs to.
 	Project types.String `tfsdk:"project"`
 	// The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`
-	Projects types.List `tfsdk:"projects"`
+	Projects types.Set `tfsdk:"projects"`
 	// The token's expiration date. NULL if the token doesn't have an expiration set.
 	ExpiresAt types.String `tfsdk:"expires_at"`
 }
@@ -93,7 +93,7 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 			},
-			"projects": schema.ListAttribute{
+			"projects": schema.SetAttribute{
 				Description: "The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.",
 				Optional:    true,
 				Computed:    true,
@@ -170,7 +170,7 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 		tflog.Debug(ctx, fmt.Sprintf("Token has projects: %+v but plan is %+v", token.Projects, plan.Projects))
 	} else {
 		if token.Projects != nil {
-			newState.Projects, _ = basetypes.NewListValueFrom(ctx, types.StringType, token.Projects)
+			newState.Projects, _ = basetypes.NewSetValueFrom(ctx, types.StringType, token.Projects)
 		}
 		tflog.Debug(ctx, fmt.Sprintf("Projects not null: %+v", token.Projects))
 	}
@@ -217,7 +217,7 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	state.Type = types.StringValue(token.Type)
 	state.Project = types.StringValue(token.Project)
 	if token.Projects != nil {
-		state.Projects, _ = basetypes.NewListValueFrom(ctx, types.StringType, token.Projects)
+		state.Projects, _ = basetypes.NewSetValueFrom(ctx, types.StringType, token.Projects)
 	}
 	if token.ExpiresAt.IsSet() && token.ExpiresAt.Get() != nil {
 		state.ExpiresAt = types.StringValue(token.ExpiresAt.Get().Format(time.RFC3339))

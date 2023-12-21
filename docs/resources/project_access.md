@@ -69,7 +69,7 @@ resource "unleash_project_access" "sample_project_access" {
 ### Required
 
 - `project` (String) Project identifier.
-- `roles` (Attributes List) Roles available in this project with their members. (see [below for nested schema](#nestedatt--roles))
+- `roles` (Attributes Set) Roles available in this project with their members. (see [below for nested schema](#nestedatt--roles))
 
 <a id="nestedatt--roles"></a>
 ### Nested Schema for `roles`

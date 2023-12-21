@@ -83,7 +83,7 @@ func (r *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "A more detailed description of the role and what use it's intended for.",
 				Required:    true,
 			},
-			"permissions": schema.ListNestedAttribute{
+			"permissions": schema.SetNestedAttribute{
 				Description: "A more detailed description of the role and what use it's intended for.",
 				Required:    true,
 				NestedObject: schema.NestedAttributeObject{

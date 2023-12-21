@@ -67,7 +67,7 @@ func (r *projectAccessResource) Schema(_ context.Context, _ resource.SchemaReque
 				Description: "Project identifier.",
 				Required:    true,
 			},
-			"roles": schema.ListNestedAttribute{
+			"roles": schema.SetNestedAttribute{
 				Description: "Roles available in this project with their members.",
 				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
