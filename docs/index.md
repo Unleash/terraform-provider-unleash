@@ -27,5 +27,5 @@ provider "unleash" {
 
 ### Optional
 
-- `authorization` (String, Sensitive) Authhorization token for Unleash API
+- `authorization` (String, Sensitive) Authorization token for Unleash API
 - `base_url` (String) Unleash base URL (everything before `/api`)
