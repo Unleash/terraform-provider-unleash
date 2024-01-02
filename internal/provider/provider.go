@@ -47,7 +47,7 @@ func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataReq
 
 func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostics *diag.Diagnostics) *unleash.APIClient {
 	base_url := strings.TrimSuffix(configValue(config.BaseUrl, "UNLEASH_URL"), "/")
-	authorization := configValue(config.Authorization, "AUTH_TOKEN")
+	authorization := configValue(config.Authorization, "AUTH_TOKEN", "UNLEASH_AUTH_TOKEN")
 	mustHave("base_url", base_url, diagnostics)
 	mustHave("authorization", authorization, diagnostics)
 
@@ -93,9 +93,13 @@ You can check a complete example [here](https://github.com/Unleash/terraform-pro
 	}
 }
 
-func configValue(configValue basetypes.StringValue, env string) string {
+func configValue(configValue basetypes.StringValue, envs ...string) string {
 	if configValue.IsNull() {
-		return os.Getenv(env)
+		for _, env := range envs {
+			if val := os.Getenv(env); val != "" {
+				return val
+			}
+		}
 	}
 	return configValue.ValueString()
 }
