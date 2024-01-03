@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/stretchr/testify/assert"
 )
@@ -56,4 +57,16 @@ func Test_provider_checkIsSupportedVersion_560(t *testing.T) {
 	var diags diag.Diagnostics
 	CheckIsSupportedVersion("5.6.0", &diags)
 	assert.False(t, diags.HasError())
+}
+
+func Test_provider_configValue(t *testing.T) {
+	t.Setenv("FOO", "foo")
+	t.Setenv("BAR", "bar")
+	t.Setenv("BAZ", "baz")
+	assert.Equal(t, "foo", configValue(types.StringValue("foo"), "BAR"))
+	assert.Equal(t, "", configValue(types.StringNull(), "SOME_ENV"))
+	assert.Equal(t, "bar", configValue(types.StringNull(), "BAR"))
+	assert.Equal(t, "bar", configValue(types.StringNull(), "BAR", "BAZ"))
+	assert.Equal(t, "baz", configValue(types.StringNull(), "QUX", "BAZ"))
+	assert.Equal(t, "bar", configValue(types.StringNull(), "QUX", "BAR", "BAZ"))
 }
