@@ -1,6 +1,6 @@
 import {
-  project = 'sample'
-  to = unleash_project_access.sample_project_access
+  project = "sample"
+  to      = unleash_project_access.sample_project_access
 }
 
 resource "unleash_project" "sample_project" {
