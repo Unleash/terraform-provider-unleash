@@ -1,3 +1,8 @@
+import {
+  project = 'sample'
+  to = unleash_project_access.sample_project_access
+}
+
 resource "unleash_project" "sample_project" {
   id   = "sample"
   name = "sample-project"
