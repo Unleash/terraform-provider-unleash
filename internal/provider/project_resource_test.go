@@ -58,6 +58,13 @@ func TestAccProjectResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_project.test_project2", "name"),
 				),
 			},
+			{
+				Config:            `resource "unleash_project" "newly_imported" {}`,
+				ImportStateId:     "TestId2",
+				ResourceName:      "unleash_project.newly_imported",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }

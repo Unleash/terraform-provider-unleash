@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -93,6 +94,8 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"send_email": schema.BoolAttribute{
 				Description: "Send a welcome email to the customer or not. Defaults to true",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -199,6 +202,10 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	} else {
 		state.Name = types.StringNull()
 	}
+	if state.SendEmail.IsNull() || state.SendEmail.IsUnknown() {
+		state.SendEmail = types.BoolValue(false)
+	}
+
 	state.RootRole = types.Int64Value(int64(*user.RootRole))
 	tflog.Debug(ctx, "Finished populating model", map[string]any{"success": true})
 

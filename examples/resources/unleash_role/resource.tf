@@ -1,18 +1,3 @@
-import {
-  id = 5
-  to = unleash_role.project_member_role
-}
-
-resource "unleash_role" "project_member_role" {
-  permissions = [{
-    name = "CREATE_PROJECT"
-    }, {
-    name = "UPDATE_PROJECT"
-    }, {
-    name = "DELETE_PROJECT"
-  }]
-}
-
 resource "unleash_role" "custom_root_role" {
   name        = "A custom role"
   type        = "root-custom"
