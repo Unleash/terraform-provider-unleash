@@ -13,6 +13,11 @@ ProjectAccess schema
 ## Example Usage
 
 ```terraform
+import {
+  project = "default"
+  to      = unleash_project_access.default_project_access
+}
+
 resource "unleash_project" "sample_project" {
   id   = "sample"
   name = "sample-project"
@@ -56,6 +61,18 @@ resource "unleash_project_access" "sample_project_access" {
       role = data.unleash_role.project_member_role.id
       users = [
         unleash_user.test_user_2.id
+      ]
+      groups = []
+    },
+  ]
+}
+
+resource "unleash_project_access" "default_project_access" {
+  roles = [
+    {
+      role = data.unleash_role.project_owner_role.id
+      users = [
+        unleash_user.test_user.id
       ]
       groups = []
     },
