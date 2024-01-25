@@ -1,6 +1,6 @@
 import {
-  project = "default"
-  to      = unleash_project_access.default_project_access
+  id = "default"
+  to = unleash_project_access.default_project_access
 }
 
 resource "unleash_project" "sample_project" {
@@ -53,6 +53,7 @@ resource "unleash_project_access" "sample_project_access" {
 }
 
 resource "unleash_project_access" "default_project_access" {
+  project = "default"
   roles = [
     {
       role = data.unleash_role.project_owner_role.id

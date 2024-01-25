@@ -126,11 +126,18 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	projects, api_response, err := r.client.ProjectsAPI.GetProjects(ctx).Execute()
 
+	tflog.Debug(ctx, "Searching for project", map[string]any{"id": state.Id.ValueString()})
 	var project unleash.ProjectSchema
 	for _, p := range projects.Projects {
 		if p.Id == state.Id.ValueString() {
 			project = p
 		}
+	}
+
+	// validate if project was found
+	if project.Id == "" {
+		resp.Diagnostics.AddError(fmt.Sprintf("Project with id %s not found", state.Id.ValueString()), "NotFound")
+		return
 	}
 
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {

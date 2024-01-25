@@ -114,6 +114,12 @@ func TestAccRoleResource(t *testing.T) {
 					customCheckRolePermissionExists("unleash_role.project_role", "UPDATE_FEATURE_ENVIRONMENT", "development"),
 				),
 			},
+			{
+				Config:            `resource "unleash_role" "project_role" {}`,
+				ResourceName:      "unleash_role.project_role",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }

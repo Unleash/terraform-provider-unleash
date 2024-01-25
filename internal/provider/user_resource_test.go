@@ -74,6 +74,34 @@ func TestAccUserResource(t *testing.T) {
 	})
 }
 
+func TestAccUserResourceImport(t *testing.T) {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
+		t.Skip("Skipping enterprise tests")
+	}
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSampleUserResource("Test User"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Test User"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
+					// TODO test the remote object matches https://developer.hashicorp.com/terraform/plugin/testing/testing-patterns#basic-test-to-verify-attributes
+				),
+			},
+			{
+				Config:            `resource "unleash_user" "the_newbie" {}`,
+				ResourceName:      "unleash_user.the_newbie",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckUserResourceDestroy(s *terraform.State) error {
 	// TODO retrieve the client from Provider configuration rather than creating a new client
 	configuration := unleash.NewConfiguration()
