@@ -202,6 +202,6 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &UnleashProvider{version: version}
+		return &UnleashProvider{version}
 	}
 }
