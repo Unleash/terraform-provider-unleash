@@ -34,6 +34,8 @@ type UnleashProvider struct {
 	version string
 }
 
+const UserAgent = "Terraform-Provider-Unleash"
+
 // ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
 type UnleashConfiguration struct {
 	BaseUrl       types.String `tfsdk:"base_url"`
@@ -45,7 +47,7 @@ func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataReq
 	resp.Version = p.version
 }
 
-func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostics *diag.Diagnostics) *unleash.APIClient {
+func unleashClient(ctx context.Context, provider *UnleashProvider, config *UnleashConfiguration, diagnostics *diag.Diagnostics) *unleash.APIClient {
 	base_url := strings.TrimSuffix(configValue(config.BaseUrl, "UNLEASH_URL"), "/")
 	authorization := configValue(config.Authorization, "AUTH_TOKEN", "UNLEASH_AUTH_TOKEN")
 	mustHave("base_url", base_url, diagnostics)
@@ -65,6 +67,7 @@ func unleashClient(ctx context.Context, config *UnleashConfiguration, diagnostic
 		},
 	}
 	unleashConfig.AddDefaultHeader("Authorization", authorization)
+	unleashConfig.UserAgent = fmt.Sprintf("%s/%s", UserAgent, provider.version)
 
 	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
 	isDebug := logLevel == "debug" || logLevel == "trace"
@@ -159,7 +162,7 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	// Configuration values are now available.
-	client := unleashClient(ctx, &config, &resp.Diagnostics)
+	client := unleashClient(ctx, p, &config, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		tflog.Error(ctx, "Unable to prepare client")
 		return
@@ -199,6 +202,6 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &UnleashProvider{}
+		return &UnleashProvider{version}
 	}
 }
