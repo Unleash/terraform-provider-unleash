@@ -93,7 +93,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 
 	createProjectRequest := *unleash.NewCreateProjectSchemaWithDefaults()
 	createProjectRequest.Name = *plan.Name.ValueStringPointer()
-	createProjectRequest.Id = *plan.Id.ValueStringPointer()
+	createProjectRequest.Id = plan.Id.ValueStringPointer()
 	if !plan.Description.IsNull() {
 		createProjectRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
 	}
