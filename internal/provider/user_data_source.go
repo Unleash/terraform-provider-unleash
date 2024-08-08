@@ -104,8 +104,8 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		Id:       types.StringValue(fmt.Sprintf("%v", user.Id)),
 		RootRole: types.Int64Value(int64(*user.RootRole)),
 	}
-	if user.Username != nil {
-		state.Username = types.StringValue(*user.Username)
+	if user.Username.IsSet() {
+		state.Username = types.StringValue(*user.Username.Get())
 	} else {
 		state.Username = types.StringNull()
 	}
