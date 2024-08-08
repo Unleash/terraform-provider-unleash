@@ -136,22 +136,6 @@ func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
 	}
 }
 
-func versionCheck(ctx context.Context, client *unleash.APIClient, diags *diag.Diagnostics) {
-	unleashConfig, api_response, err := client.AdminUIAPI.GetUiConfig(ctx).Execute()
-
-	if !ValidateApiResponse(api_response, 200, diags, err) {
-		return
-	}
-
-	if !unleashConfig.VersionInfo.IsLatest {
-		diags.AddWarning("You're not using the latest Unleash version, consider upgrading",
-			fmt.Sprintf("You're using version %s, the latest unleash-server is %s, while the latest enterprise version is: %s", unleashConfig.Version, *unleashConfig.VersionInfo.Latest.Oss, *unleashConfig.VersionInfo.Latest.Enterprise))
-	}
-
-	checkIsSupportedVersion(unleashConfig.Version, diags)
-	tflog.Info(ctx, fmt.Sprintf("Found a supported Unleash version: %s", unleashConfig.Version))
-}
-
 func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config UnleashConfiguration
 
@@ -167,8 +151,6 @@ func (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureR
 		tflog.Error(ctx, "Unable to prepare client")
 		return
 	}
-
-	versionCheck(ctx, client, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
