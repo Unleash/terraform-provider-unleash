@@ -143,8 +143,8 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Update model with response
 	plan.Id = types.StringValue(fmt.Sprintf("%v", user.Id))
 	plan.RootRole = types.Int64Value(int64(*user.RootRole.Int32))
-	if user.Username != nil {
-		plan.Username = types.StringValue(*user.Username)
+	if user.Username.IsSet() {
+		plan.Username = types.StringValue(*user.Username.Get())
 	} else {
 		plan.Username = types.StringNull()
 	}
@@ -192,8 +192,8 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Username != nil {
-		state.Username = types.StringValue(*user.Username)
+	if user.Username.IsSet() {
+		state.Username = types.StringValue(*user.Username.Get())
 	} else {
 		state.Username = types.StringNull()
 	}
@@ -253,8 +253,8 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Username != nil {
-		state.Username = types.StringValue(*user.Username)
+	if user.Username.IsSet() {
+		state.Username = types.StringValue(*user.Username.Get())
 	} else {
 		state.Username = types.StringNull()
 	}
