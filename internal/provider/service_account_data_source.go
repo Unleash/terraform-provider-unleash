@@ -46,7 +46,7 @@ func (d *serviceAccountDataSource) Configure(ctx context.Context, req datasource
 }
 
 func (d *serviceAccountDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_role"
+	resp.TypeName = req.ProviderTypeName + "_service_account"
 }
 
 func (r *serviceAccountDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -74,7 +74,7 @@ func (r *serviceAccountDataSource) Schema(_ context.Context, _ datasource.Schema
 }
 
 func (d *serviceAccountDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	tflog.Debug(ctx, "Preparing to read user data source")
+	tflog.Debug(ctx, "Preparing to read service account data source")
 	var state serviceAccountModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
@@ -106,7 +106,7 @@ func (d *serviceAccountDataSource) Read(ctx context.Context, req datasource.Read
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
+	tflog.Debug(ctx, "Finished reading service account data source", map[string]any{"success": true})
 }
 
 func (r *serviceAccountDataSource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
