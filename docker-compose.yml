@@ -17,8 +17,8 @@ services:
   # The Unleash server contains the Unleash configuration and
   # communicates with server-side SDKs and the Unleash Proxy
   unleash:
-    image: test-enterprise
-    # pull_policy: "always"
+    image: ${UNLEASH_DOCKER_IMAGE:-unleashorg/unleash-server:latest}
+    pull_policy: "always"
     ports:
       - "4242:4242" # TODO expose at random port (useful for testing)
     environment:
