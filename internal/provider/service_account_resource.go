@@ -27,9 +27,9 @@ type serviceAccountResource struct {
 }
 
 type serviceAccountResourceModel struct {
-	Id       types.String `tfsdk:"id"`
+	Id       types.Int64  `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
-	UserName types.String `tfsdk:"user_name"`
+	UserName types.String `tfsdk:"username"`
 	RootRole types.Int64  `tfsdk:"root_role"`
 }
 
@@ -54,13 +54,13 @@ func (r *serviceAccountResource) Schema(_ context.Context, _ resource.SchemaRequ
 	resp.Schema = schema.Schema{
 		Description: "Manages a service account.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
+			"id": schema.Int64Attribute{
 				Description: "The ID of the service account.",
 				Computed:    true,
 			},
 			"username": schema.StringAttribute{
 				Description: "The username for the service account.",
-				Required:    true,
+				Optional:    true,
 			},
 			"name": schema.StringAttribute{
 				Description: "The name of the service account.",
@@ -126,6 +126,7 @@ func (r *serviceAccountResource) Create(ctx context.Context, req resource.Create
 	}
 
 	plan.RootRole = types.Int64Value(int64(*serviceAccount.RootRole))
+	plan.Id = types.Int64Value(int64(serviceAccount.Id))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Debug(ctx, "Finished creating service account resource", map[string]any{"success": true})
@@ -147,13 +148,18 @@ func (r *serviceAccountResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	var serviceAccount unleash.ServiceAccountSchema
+	var serviceAccount *unleash.ServiceAccountSchema
 
 	for _, s := range serviceAccounts.ServiceAccounts {
 		if fmt.Sprintf("%g", s.Id) == state.Id.String() {
-			serviceAccount = s
+			serviceAccount = &s
 			break
 		}
+	}
+
+	if serviceAccount == nil {
+		resp.Diagnostics.AddError("Service account not found", "no service account found with the given ID")
+		return
 	}
 
 	if serviceAccount.Name != nil {
@@ -191,7 +197,8 @@ func (r *serviceAccountResource) Update(ctx context.Context, req resource.Update
 		Name:     state.Name.ValueStringPointer(),
 	}
 
-	serviceAccount, apiResponse, err := r.client.ServiceAccountsAPI.UpdateServiceAccount(ctx, state.Id.ValueString()).UpdateServiceAccountSchema(updateSchema).Execute()
+	accountId := fmt.Sprintf("%v", state.Id.ValueInt64())
+	serviceAccount, apiResponse, err := r.client.ServiceAccountsAPI.UpdateServiceAccount(ctx, accountId).UpdateServiceAccountSchema(updateSchema).Execute()
 
 	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
 		return
@@ -225,7 +232,8 @@ func (r *serviceAccountResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	apiResponse, err := r.client.ServiceAccountsAPI.DeleteServiceAccount(ctx, state.Id.ValueString()).Execute()
+	accountId := fmt.Sprintf("%v", state.Id.ValueInt64())
+	apiResponse, err := r.client.ServiceAccountsAPI.DeleteServiceAccount(ctx, accountId).Execute()
 
 	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
 		return

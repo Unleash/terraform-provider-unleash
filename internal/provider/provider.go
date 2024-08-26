@@ -170,7 +170,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewApiTokenResource,
 		NewRoleResource,
 		NewProjectAccessResource,
-		// NewServiceAccountResource,
+		NewServiceAccountResource,
 	}
 }
 
@@ -180,7 +180,6 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewProjectDataSource,
 		NewPermissionDataSource,
 		NewRoleDataSource,
-		NewServiceAccountDataSource,
 	}
 }
 
