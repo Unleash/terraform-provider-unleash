@@ -170,6 +170,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewApiTokenResource,
 		NewRoleResource,
 		NewProjectAccessResource,
+		NewServiceAccountResource,
 	}
 }
 
