@@ -60,7 +60,7 @@ func (r *serviceAccountResource) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"username": schema.StringAttribute{
 				Description: "The username for the service account.",
-				Optional:    true,
+				Required:    true,
 			},
 			"name": schema.StringAttribute{
 				Description: "The name of the service account.",
