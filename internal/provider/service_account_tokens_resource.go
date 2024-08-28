@@ -172,9 +172,9 @@ func (r *serviceAccountTokensResource) Read(ctx context.Context, req resource.Re
 
 	var serviceAccountToken *unleash.PatSchema
 
-	for _, s := range serviceAccountTokens.Pats {
-		if s.Id == int32(state.Id.ValueInt64()) {
-			serviceAccountToken = &s
+	for i := range serviceAccountTokens.Pats {
+		if serviceAccountTokens.Pats[i].Id == int32(state.Id.ValueInt64()) {
+			serviceAccountToken = &serviceAccountTokens.Pats[i]
 			break
 		}
 	}

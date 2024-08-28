@@ -106,7 +106,7 @@ func TestAccServiceAccountTokenResourceUpdatingDescriptionGeneratesNewToken(t *t
 
 // Little bit of terraform testing magic. From the actual test it looks like this is only called once,
 // but it isn't, it's called on each step, so it gives us a chance to trap the secret on the first
-// step and compare on the second
+// step and compare on the second.
 func testCheckDifferentSecrets(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resource, ok := s.RootModule().Resources[resourceName]
