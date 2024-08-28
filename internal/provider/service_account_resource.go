@@ -148,15 +148,6 @@ func (r *serviceAccountResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	// var serviceAccount *unleash.ServiceAccountSchema
-
-	// for _, s := range serviceAccounts.ServiceAccounts {
-	// 	if fmt.Sprintf("%g", s.Id) == state.Id.String() {
-	// 		serviceAccount = &s
-	// 		break
-	// 	}
-	// }
-
 	var serviceAccount *unleash.ServiceAccountSchema
 
 	for i := range serviceAccounts.ServiceAccounts {
