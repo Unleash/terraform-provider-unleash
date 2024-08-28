@@ -95,8 +95,6 @@ func (r *serviceAccountResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	plan.RootRole.ToInt64Value(ctx)
-
 	roleId32 := int32(roleId.ValueInt64())
 
 	createSchema := unleash.CreateServiceAccountSchema{
