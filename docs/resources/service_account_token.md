@@ -14,11 +14,10 @@ description: |-
 
 Allows for managing the tokens bound to a service account. Note that service account tokens in Unleash
 		are both immutable and cannot be recovered once created. This means you must use them immediately when creating them via terraform.
-		Typically by piping them to an external secret manager or binding them to some other external terraform resource that requires Unleash tokens
+		Typically by piping them to an external secret manager or binding them to some other external terraform resource that requires Unleash tokens.
 
 		Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
 		meaning that the secrets will be rotated out.
-		.
 
 ## Example Usage
 
@@ -65,7 +64,7 @@ resource "external_resource" "external_unleash_integration" {
 
 - `description` (String) The description of the service account token.
 - `expires_at` (String) The expiration date of the service account token.
-- `service_account_id` (Number) The ID of the service account token.
+- `service_account_id` (Number) The ID of the service account this token is bound to.
 
 ### Read-Only
 

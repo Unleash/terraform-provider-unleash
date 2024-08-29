@@ -63,7 +63,7 @@ func (r *serviceAccountTokensResource) Schema(_ context.Context, _ resource.Sche
 				Computed:    true,
 			},
 			"service_account_id": schema.Int64Attribute{
-				Description: "The ID of the service account token.",
+				Description: "The ID of the service account this token is bound to.",
 				Required:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
@@ -91,11 +91,10 @@ func (r *serviceAccountTokensResource) Schema(_ context.Context, _ resource.Sche
 		},
 		MarkdownDescription: `Allows for managing the tokens bound to a service account. Note that service account tokens in Unleash
 		are both immutable and cannot be recovered once created. This means you must use them immediately when creating them via terraform.
-		Typically by piping them to an external secret manager to binding them to some other external terraform resource that requires Unleash tokens.
+		Typically by piping them to an external secret manager or binding them to some other external terraform resource that requires Unleash tokens.
 
 		Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
-		meaning that the secrets will be rotated out.
-		.`,
+		meaning that the secrets will be rotated out.`,
 	}
 }
 
