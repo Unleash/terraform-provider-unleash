@@ -94,7 +94,7 @@ func (r *serviceAccountTokensResource) Schema(_ context.Context, _ resource.Sche
 		Typically by piping them to an external secret manager to binding them to some other external terraform resource that requires Unleash tokens
 
 		Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
-		meaning that the secrets will by rotated out.
+		meaning that the secrets will be rotated out.
 		.`,
 	}
 }
