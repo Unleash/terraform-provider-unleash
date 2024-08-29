@@ -8,7 +8,6 @@ description: |-
           Typically by piping them to an external secret manager to binding them to some other external terraform resource that requires Unleash tokens
       Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
       meaning that the secrets will by rotated out.
-      .
 ---
 
 # unleash_service_account_token (Resource)
