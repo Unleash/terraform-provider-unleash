@@ -52,7 +52,7 @@ resource "null_resource" "store_token" {
   }
 }
 
-## Some external resource that requires an unleash token to automation
+## Some external resource that requires an Unleash token for automation
 resource "external_resource" "external_unleash_integration" {
   unleash_api_key = unleash_service_account_token.token_for_account_test.secret
 }
