@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -141,7 +142,8 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Update model with response
-	plan.Id = types.StringValue(fmt.Sprintf("%v", user.Id))
+	plan.Id = types.StringValue(strconv.Itoa(int(user.Id)))
+
 	plan.RootRole = types.Int64Value(int64(*user.RootRole.Int32))
 	if user.Username.IsSet() {
 		plan.Username = types.StringValue(*user.Username.Get())
@@ -185,8 +187,10 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	// Update model with response
-	state.Id = types.StringValue(fmt.Sprintf("%v", user.Id))
+	state.Id = types.StringValue(strconv.Itoa(int(user.Id)))
+
+	fmt.Println("Seeting user id to", fmt.Sprintf("%v", user.Id))
+
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
 	} else {
@@ -241,7 +245,17 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
-	user, api_response, err := r.client.UsersAPI.UpdateUser(ctx, state.Id.ValueString()).UpdateUserSchema(updateUserSchema).Execute()
+	id, err := strconv.Atoi(state.Id.ValueString())
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
+			err.Error(),
+		)
+		return
+	}
+
+	user, api_response, err := r.client.UsersAPI.UpdateUser(ctx, int32(id)).UpdateUserSchema(updateUserSchema).Execute()
 
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
