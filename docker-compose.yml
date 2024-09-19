@@ -61,3 +61,11 @@ services:
       timeout: 1m
       retries: 5
       start_period: 10s
+  mock-openid-server:
+    image: python:3.10
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./test:/test
+    working_dir: /test
+    command: sh -c "python3 -m http.server 9000"
