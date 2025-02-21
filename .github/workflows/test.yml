@@ -71,6 +71,9 @@ jobs:
           - "1.4.*"
         docker-image:
           - "ghcr.io/ivarconr/unleash-enterprise:latest"
+          - "ghcr.io/ivarconr/unleash-enterprise:6.6"
+          - "ghcr.io/ivarconr/unleash-enterprise:6.5"
+          - "ghcr.io/ivarconr/unleash-enterprise:6.4"
           - "unleashorg/unleash-server:latest"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
