@@ -31,7 +31,7 @@ services:
       INIT_ADMIN_API_TOKENS: "*:*.unleash-insecure-admin-api-token"
       # setup license
       NODE_ENV: "development"
-      UNLEASH_DEV_LICENSE: "${UNLEASH_DEV_LICENSE}"
+      UNLEASH_LICENSE: "${UNLEASH_DEV_LICENSE}"
     depends_on:
       db:
         condition: service_healthy
