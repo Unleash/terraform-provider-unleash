@@ -41,6 +41,10 @@ jobs:
         with:
           go-version-file: "go.mod"
           cache: true
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.4.*
+          terraform_wrapper: false
       - run: go generate ./...
       - name: git diff
         run: |
@@ -88,6 +92,7 @@ jobs:
         run: docker compose up -d --wait -t 90
         env:
           UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
+          UNLEASH_DEV_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
