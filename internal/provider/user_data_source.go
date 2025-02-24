@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -94,7 +95,16 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
-	user, api_response, err := d.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
+	userId, err := strconv.Atoi(state.Id.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
+			err.Error(),
+		)
+		return
+	}
+
+	user, api_response, err := d.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}

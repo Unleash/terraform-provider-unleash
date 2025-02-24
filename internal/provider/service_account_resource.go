@@ -104,8 +104,8 @@ func (r *serviceAccountResource) Create(ctx context.Context, req resource.Create
 	roleId32 := int32(roleId.ValueInt64())
 
 	createSchema := unleash.CreateServiceAccountSchema{
-		Username: plan.UserName.ValueStringPointer(),
-		Name:     plan.Name.ValueStringPointer(),
+		Username: *plan.UserName.ValueStringPointer(),
+		Name:     *plan.Name.ValueStringPointer(),
 		RootRole: roleId32,
 	}
 

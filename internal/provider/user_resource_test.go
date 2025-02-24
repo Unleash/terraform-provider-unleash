@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -123,7 +124,12 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 			continue
 		}
 
-		user, response, err := apiClient.UsersAPI.GetUser(context.Background(), rs.Primary.ID).Execute()
+		userId, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Expected an integer")
+		}
+
+		user, response, err := apiClient.UsersAPI.GetUser(context.Background(), int32(userId)).Execute()
 		if err == nil {
 			if fmt.Sprintf("%v", user.Id) == rs.Primary.ID {
 				return fmt.Errorf("User (%s) still exists.", rs.Primary.ID)

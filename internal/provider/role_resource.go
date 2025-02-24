@@ -132,7 +132,7 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 			Name: plannedPermission.Name.ValueString(),
 		}
 		if !plannedPermission.Environment.IsNull() && !plannedPermission.Environment.IsUnknown() {
-			permissionRef.Environment = plannedPermission.Environment.ValueStringPointer()
+			permissionRef.SetEnvironment(*plannedPermission.Environment.ValueStringPointer())
 		}
 		permissions = append(permissions, permissionRef)
 	}
@@ -167,8 +167,8 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 		permissionRef := permissionRef{
 			Name: types.StringValue(requestPermission.Name),
 		}
-		if requestPermission.Environment != nil {
-			permissionRef.Environment = types.StringValue(*requestPermission.Environment)
+		if requestPermission.Environment.IsSet() {
+			permissionRef.Environment = types.StringValue(*requestPermission.Environment.Get())
 		}
 		newPermissions = append(newPermissions, permissionRef)
 	}
@@ -251,7 +251,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 			Name: plannedPermission.Name.ValueString(),
 		}
 		if !plannedPermission.Environment.IsNull() && !plannedPermission.Environment.IsUnknown() {
-			permissionRef.Environment = plannedPermission.Environment.ValueStringPointer()
+			permissionRef.SetEnvironment(plannedPermission.Environment.ValueString())
 		}
 		permissions = append(permissions, permissionRef)
 	}
@@ -286,8 +286,8 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		permissionRef := permissionRef{
 			Name: types.StringValue(foundPermissions.Name),
 		}
-		if foundPermissions.Environment != nil {
-			permissionRef.Environment = types.StringValue(*foundPermissions.Environment)
+		if foundPermissions.Environment.IsSet() {
+			permissionRef.Environment = types.StringValue(*foundPermissions.Environment.Get())
 		}
 		freshPermissions = append(freshPermissions, permissionRef)
 	}
