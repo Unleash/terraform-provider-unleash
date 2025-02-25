@@ -28,6 +28,7 @@ type projectDataSourceModel struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
+	Mode        types.String `tfsdk:"mode"`
 }
 
 func (d *projectDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
@@ -64,6 +65,11 @@ func (d *projectDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "A description of the project's purpose.",
 				Optional:    true,
 			},
+			"mode": schema.StringAttribute{
+				Description: "The mode of the project affecting what actions are possible in this project. Possible values are 'open', 'protected', 'private'. Defaults to 'open' if not set.",
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -96,6 +102,14 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		state.Description = types.StringValue(fmt.Sprintf("%v", *project.Description.Get()))
 	} else {
 		state.Description = types.StringNull()
+	}
+
+	if project.Mode != nil {
+		state.Mode = types.StringValue(*project.Mode)
+	} else {
+		// From checking the API spec I don't believe this actually can happen but this gives us a nice
+		// chance to have some backwards compatibility with older versions of the API where open was the only mode
+		state.Mode = types.StringValue("open")
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
