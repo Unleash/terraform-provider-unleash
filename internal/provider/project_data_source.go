@@ -66,9 +66,11 @@ func (d *projectDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Optional:    true,
 			},
 			"mode": schema.StringAttribute{
-				Description: "The mode of the project affecting what actions are possible in this project. Possible values are 'open', 'protected', 'private'. Defaults to 'open' if not set.",
-				Optional:    true,
-				Computed:    true,
+				Description: "The project's collaboration mode. Determines whether non project members can submit " +
+					"change requests and the projects visibility to non members. Valid values are 'open', 'protected' and 'private'." +
+					" If a value is not set, the project will default to 'open'",
+				Optional: true,
+				Computed: true,
 			},
 		},
 	}

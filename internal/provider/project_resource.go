@@ -30,6 +30,7 @@ type projectResourceModel struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
+	Mode        types.String `tfsdk:"mode"`
 }
 
 // Configure adds the provider configured client to the data source.
@@ -69,6 +70,13 @@ func (r *projectResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "A description of the project's purpose.",
 				Optional:    true,
 			},
+			"mode": schema.StringAttribute{
+				Description: "The project's collaboration mode. Determines whether non project members can submit " +
+					"change requests and the projects visibility to non members. Valid values are 'open', 'protected' and 'private'." +
+					" If a value is not set, the project will default to 'open'",
+				Computed: true,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -104,8 +112,25 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	mode, err := resolveRequestedMode(plan)
+	if err != nil {
+		resp.Diagnostics.AddError(err.Error(), "InvalidMode")
+		return
+	}
+
+	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
+	updateProjectSettingsRequest.SetMode(mode)
+
+	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(context.Background(), *plan.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
+
+	if !ValidateApiResponse(updateSettingsResponse, 200, &resp.Diagnostics, err) {
+		return
+	}
+
 	plan.Id = types.StringValue(project.Id)
 	plan.Name = types.StringValue(project.Name)
+	plan.Mode = types.StringValue(mode)
+
 	if project.Description.IsSet() {
 		plan.Description = types.StringValue(*project.Description.Get())
 	} else {
@@ -147,6 +172,8 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 	state.Id = types.StringValue(fmt.Sprintf("%v", project.Id))
 	state.Name = types.StringValue(fmt.Sprintf("%v", project.Name))
 
+	setModelMode(project.Mode, &state)
+
 	if project.Description.IsSet() && project.Description.Get() != nil {
 		state.Description = types.StringValue(*project.Description.Get())
 	} else {
@@ -172,6 +199,21 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 		updateProjectSchema.Description = state.Description.ValueStringPointer()
 	}
 
+	mode, err := resolveRequestedMode(state)
+	if err != nil {
+		resp.Diagnostics.AddError(err.Error(), "InvalidMode")
+		return
+	}
+
+	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
+	updateProjectSettingsRequest.SetMode(mode)
+
+	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(context.Background(), *state.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
+
+	if !ValidateApiResponse(updateSettingsResponse, 200, &resp.Diagnostics, err) {
+		return
+	}
+
 	req.State.Get(ctx, &state)
 
 	api_response, err := r.client.ProjectsAPI.UpdateProject(ctx, state.Id.ValueString()).UpdateProjectSchema(updateProjectSchema).Execute()
@@ -195,6 +237,8 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	state.Id = types.StringValue(fmt.Sprintf("%v", project.Id))
 	state.Name = types.StringValue(fmt.Sprintf("%v", project.Name))
+
+	setModelMode(project.Mode, &state)
 
 	if project.Description.IsSet() {
 		state.Description = types.StringValue(*project.Description.Get())
@@ -224,4 +268,26 @@ func (r *projectResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	resp.State.RemoveResource(ctx)
 	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
+}
+
+func setModelMode(mode *string, model *projectResourceModel) {
+	if mode != nil {
+		model.Mode = types.StringValue(*mode)
+	} else {
+		// From checking the API spec I don't believe this actually can happen but this gives us a nice
+		// chance to have some backwards compatibility with older versions of the API where open was the only mode
+		model.Mode = types.StringValue("open")
+	}
+}
+
+func resolveRequestedMode(plan projectResourceModel) (string, error) {
+	if !plan.Mode.IsNull() && plan.Mode.ValueString() != "" && plan.Mode.ValueString() != "open" && plan.Mode.ValueString() != "protected" && plan.Mode.ValueString() != "private" {
+		return "", fmt.Errorf("project mode must be unset or set to 'open', 'protected' or 'private'. Got: '%s'", plan.Mode.ValueString())
+	}
+
+	if !plan.Mode.IsNull() && plan.Mode.ValueString() != "" {
+		return plan.Mode.ValueString(), nil
+	} else {
+		return "open", nil
+	}
 }
