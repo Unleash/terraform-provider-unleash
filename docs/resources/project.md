@@ -42,3 +42,4 @@ resource "unleash_project" "test_project" {
 ### Optional
 
 - `description` (String) A description of the project's purpose.
+- `mode` (String) The project's collaboration mode. Determines whether non project members can submit change requests and the projects visibility to non members. Valid values are 'open', 'protected' and 'private'. If a value is not set, the project will default to 'open'
