@@ -25,6 +25,16 @@ func testAccSampleProjectResourceWithNoDescription(name string, id string) strin
 	}`, id, name)
 }
 
+func testAccSampleProjectResourceWithMode(id string, mode string) string {
+	return fmt.Sprintf(`
+		resource "unleash_project" "test_project3" {
+		id = "%s"
+		name = "TestProjectName"
+		description = "test description"
+		mode = "%s"
+	}`, id, mode)
+}
+
 func TestAccProjectResource(t *testing.T) {
 	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
 		t.Skip("Skipping enterprise tests")
@@ -64,6 +74,22 @@ func TestAccProjectResource(t *testing.T) {
 				ResourceName:      "unleash_project.newly_imported",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config: testAccSampleProjectResourceWithMode("TestId3", "open"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_project.test_project3", "id"),
+					resource.TestCheckResourceAttrSet("unleash_project.test_project3", "name"),
+					resource.TestCheckResourceAttr("unleash_project.test_project3", "mode", "open"),
+				),
+			},
+			{
+				Config: testAccSampleProjectResourceWithMode("TestId3", "private"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_project.test_project3", "id"),
+					resource.TestCheckResourceAttrSet("unleash_project.test_project3", "name"),
+					resource.TestCheckResourceAttr("unleash_project.test_project3", "mode", "private"),
+				),
 			},
 		},
 	})

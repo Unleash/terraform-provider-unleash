@@ -180,16 +180,23 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
+	userId, err := strconv.Atoi(state.Id.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
+			err.Error(),
+		)
+		return
+	}
+
 	// Get fresh data
-	user, api_response, err := r.client.UsersAPI.GetUser(ctx, state.Id.ValueString()).Execute()
+	user, api_response, err := r.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
 
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
 	state.Id = types.StringValue(strconv.Itoa(int(user.Id)))
-
-	fmt.Println("Seeting user id to", fmt.Sprintf("%v", user.Id))
 
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
@@ -294,7 +301,16 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	api_response, err := r.client.UsersAPI.DeleteUser(ctx, state.Id.ValueString()).Execute()
+	userId, err := strconv.Atoi(state.Id.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
+			err.Error(),
+		)
+		return
+	}
+
+	api_response, err := r.client.UsersAPI.DeleteUser(ctx, int32(userId)).Execute()
 
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return

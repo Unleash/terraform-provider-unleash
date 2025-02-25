@@ -21,6 +21,7 @@ func TestAccProjectDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr("data.unleash_project.test", "name", "Default"),
 					resource.TestCheckResourceAttr("data.unleash_project.test", "id", "default"),
 					resource.TestCheckResourceAttr("data.unleash_project.test", "description", "Default project"),
+					resource.TestCheckResourceAttr("data.unleash_project.test", "mode", "open"),
 				),
 			},
 		},
