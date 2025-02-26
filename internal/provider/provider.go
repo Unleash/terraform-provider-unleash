@@ -174,6 +174,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewServiceAccountTokensResource,
 		NewOidcResource,
 		NewSamlResource,
+		NewContextFieldResource,
 	}
 }
 
