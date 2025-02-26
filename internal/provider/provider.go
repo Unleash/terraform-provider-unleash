@@ -183,6 +183,7 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewProjectDataSource,
 		NewPermissionDataSource,
 		NewRoleDataSource,
+		NewContextFieldDataSource,
 	}
 }
 
