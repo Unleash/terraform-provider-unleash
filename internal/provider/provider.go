@@ -175,6 +175,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewOidcResource,
 		NewSamlResource,
 		NewContextFieldResource,
+		NewEnvironmentResource,
 	}
 }
 
