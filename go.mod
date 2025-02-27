@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/Masterminds/semver v1.5.0
-	github.com/Unleash/unleash-server-api-go v0.5.2
+	github.com/Unleash/unleash-server-api-go v0.5.3
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 	github.com/hashicorp/terraform-plugin-framework v1.4.2
