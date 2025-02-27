@@ -174,6 +174,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewServiceAccountTokensResource,
 		NewOidcResource,
 		NewSamlResource,
+		NewContextFieldResource,
 	}
 }
 
@@ -183,6 +184,7 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewProjectDataSource,
 		NewPermissionDataSource,
 		NewRoleDataSource,
+		NewContextFieldDataSource,
 	}
 }
 
