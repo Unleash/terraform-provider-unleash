@@ -24,9 +24,8 @@ type environmentDataSource struct {
 }
 
 type environmentDataSourceModel struct {
-	Name    types.String `tfsdk:"name"`
-	Type    types.String `tfsdk:"type"`
-	Enabled types.Bool   `tfsdk:"enabled"`
+	Name types.String `tfsdk:"name"`
+	Type types.String `tfsdk:"type"`
 }
 
 func (d *environmentDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
@@ -58,11 +57,6 @@ func (d *environmentDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 					"You can pass other values and Unleash will accept them but they will carry no special semantics.",
 				Required: true,
 			},
-			"enabled": schema.BoolAttribute{
-				Description: "Whether this environment is enabled or not. Enabled environments will be available for use in Feature Flags. This defaults to true if not set.",
-				Optional:    true,
-				Computed:    true,
-			},
 		},
 	}
 }
@@ -84,9 +78,8 @@ func (d *environmentDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 
 	state = environmentDataSourceModel{
-		Name:    types.StringValue(environment.Name),
-		Type:    types.StringValue(environment.Type),
-		Enabled: types.BoolValue(environment.Enabled),
+		Name: types.StringValue(environment.Name),
+		Type: types.StringValue(environment.Type),
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
