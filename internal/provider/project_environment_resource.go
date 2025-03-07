@@ -75,7 +75,7 @@ func (v requiredApprovalsValidator) ValidateInt64(ctx context.Context, req valid
 }
 
 func (r *projectEnvironmentResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_project_change_request"
+	resp.TypeName = req.ProviderTypeName + "_project_environment"
 }
 
 func (r *projectEnvironmentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
