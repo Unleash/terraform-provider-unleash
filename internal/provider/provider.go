@@ -176,6 +176,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewSamlResource,
 		NewContextFieldResource,
 		NewEnvironmentResource,
+		NewProjectEnvironmentResource,
 	}
 }
 
@@ -187,6 +188,7 @@ func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewRoleDataSource,
 		NewContextFieldDataSource,
 		NewEnvironmentDataSource,
+		NewProjectEnvironmentDataSource,
 	}
 }
 
