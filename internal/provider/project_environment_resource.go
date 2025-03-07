@@ -61,7 +61,7 @@ func (v requiredApprovalsValidator) MarkdownDescription(ctx context.Context) str
 
 func (v requiredApprovalsValidator) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
-		return // Skip validation for null or unknown values
+		return
 	}
 
 	val := req.ConfigValue.ValueInt64()
