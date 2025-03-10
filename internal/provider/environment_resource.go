@@ -50,7 +50,7 @@ func (r *environmentResource) Metadata(_ context.Context, req resource.MetadataR
 
 func (r *environmentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch a context field.",
+		Description: "Manage Unleash environments.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the environment. Must be a URL-friendly string according to RFC 3968. " +

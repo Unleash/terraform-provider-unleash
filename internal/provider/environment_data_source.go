@@ -46,7 +46,7 @@ func (d *environmentDataSource) Metadata(_ context.Context, req datasource.Metad
 
 func (d *environmentDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch a context field.",
+		Description: "Access existing environments.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the environment. Must be a URL-friendly string according to RFC 3968.",

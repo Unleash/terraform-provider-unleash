@@ -3,12 +3,12 @@
 page_title: "unleash_environment Resource - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  Fetch a context field.
+  Manage Unleash environments.
 ---
 
 # unleash_environment (Resource)
 
-Fetch a context field.
+Manage Unleash environments.
 
 
 

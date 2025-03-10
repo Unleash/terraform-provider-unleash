@@ -3,12 +3,12 @@
 page_title: "unleash_environment Data Source - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  Fetch a context field.
+  Access existing environments.
 ---
 
 # unleash_environment (Data Source)
 
-Fetch a context field.
+Access existing environments.
 
 
 
