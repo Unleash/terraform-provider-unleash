@@ -3,12 +3,12 @@
 page_title: "unleash_project_environment Data Source - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  ProjectAccess schema
+  ProjectEnvironment schema
 ---
 
 # unleash_project_environment (Data Source)
 
-ProjectAccess schema
+ProjectEnvironment schema
 
 
 

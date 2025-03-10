@@ -3,12 +3,12 @@
 page_title: "unleash_project_environment Resource - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  ProjectAccess schema
+  ProjectEnvironment schema
 ---
 
 # unleash_project_environment (Resource)
 
-ProjectAccess schema
+ProjectEnvironment schema
 
 
 
