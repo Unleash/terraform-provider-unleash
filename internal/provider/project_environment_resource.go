@@ -80,7 +80,7 @@ func (r *projectEnvironmentResource) Metadata(_ context.Context, req resource.Me
 
 func (r *projectEnvironmentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "ProjectAccess schema",
+		Description: "ProjectEnvironment schema",
 		Attributes: map[string]schema.Attribute{
 			"project_id": schema.StringAttribute{
 				Description: "Project identifier.",
