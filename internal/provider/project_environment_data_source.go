@@ -50,7 +50,7 @@ func (d *projectEnvironmentDataSource) Metadata(_ context.Context, req datasourc
 
 func (d *projectEnvironmentDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "ProjectAccess schema",
+		Description: "ProjectEnvironment schema",
 		Attributes: map[string]schema.Attribute{
 			"project_id": schema.StringAttribute{
 				Description: "Project identifier.",
