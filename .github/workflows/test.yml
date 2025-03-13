@@ -81,20 +81,19 @@ jobs:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download
-      - name: Login to ghcr
+      - name: Start Unleash enterprise test instance
         if: contains(matrix.docker-image, 'unleash-enterprise')
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: gastonfournier
-          password: ${{ secrets.GHCR_TOKEN }}
-      - name: Start Unleash test instance
         run: |
           curl https://app.unleash-hosted.com/docker-login/token/${{ secrets.ECR_ENTERPRISE_TOKEN }} | docker login --username AWS --password-stdin 726824350591.dkr.ecr.eu-central-1.amazonaws.com
           docker compose up -d --wait -t 90
         env:
           UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
           UNLEASH_DEV_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
+      - name: Start Unleash OSS test instance
+        if: contains(matrix.docker-image, 'unleash-server')
+        run: docker compose up -d --wait -t 90
+        env:
+          UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
