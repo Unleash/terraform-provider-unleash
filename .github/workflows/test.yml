@@ -68,7 +68,7 @@ jobs:
           - "1.3.*"
           - "1.4.*"
         docker-image:
-          - "ghcr.io/ivarconr/unleash-enterprise:latest"
+          - "726824350591.dkr.ecr.eu-central-1.amazonaws.com/unleash-enterprise:latest"
           - "unleashorg/unleash-server:latest"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -81,18 +81,19 @@ jobs:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download
-      - name: Login to ghcr
+      - name: Start Unleash enterprise test instance
         if: contains(matrix.docker-image, 'unleash-enterprise')
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: gastonfournier
-          password: ${{ secrets.GHCR_TOKEN }}
-      - name: Start Unleash test instance
-        run: docker compose up -d --wait -t 90
+        run: |
+          curl https://app.unleash-hosted.com/docker-login/token/${{ secrets.ECR_ENTERPRISE_TOKEN }} | docker login --username AWS --password-stdin 726824350591.dkr.ecr.eu-central-1.amazonaws.com
+          docker compose up -d --wait -t 90
         env:
           UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
           UNLEASH_DEV_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
+      - name: Start Unleash OSS test instance
+        if: contains(matrix.docker-image, 'unleash-server')
+        run: docker compose up -d --wait -t 90
+        env:
+          UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
