@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"testing"
-	"os"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"os"
+	"testing"
 )
 
 func TestAccApiTokenResource(t *testing.T) {
@@ -73,7 +73,13 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_api_token.client_no_expire", "secret"),
 					resource.TestCheckNoResourceAttr("unleash_api_token.client_no_expire", "expires_at"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "token_name", "client_no_expire"),
-					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "environment", func() string { if v := os.Getenv("DEFAULT_ENVIRONMENT"); v != "" { return v } else { return "development" } }()),
+					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "environment", func() string {
+						if v := os.Getenv("DEFAULT_ENVIRONMENT"); v != "" {
+							return v
+						} else {
+							return "development"
+						}
+					}()),
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "projects.0", "default"),
 				),
 			},
