@@ -89,10 +89,12 @@ jobs:
         env:
           UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
           UNLEASH_DEV_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
+      - name: Define default environment for old versions compatibility
+        run: echo "DEFAULT_ENVIRONMENT=default" >> $GITHUB_ENV
+        if: endsWith(matrix.docker-image, ':5') || endsWith(matrix.docker-image, ':6')
       - run: go test -v -cover ./internal/provider/
         env:
           TF_ACC: "1"
           #TF_LOG: "debug"
           UNLEASH_ENTERPRISE: "${{ contains(matrix.docker-image, 'unleash-enterprise') }}"
-          DEFAULT_ENVIRONMENT: "${{ contains(matrix.docker-image, 'latest')? 'development' : 'default' }}"
         timeout-minutes: 3
