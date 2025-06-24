@@ -37,8 +37,8 @@ type apiTokenResourceModel struct {
 	Type types.String `tfsdk:"type"`
 	// The environment the token has access to. `*` if it has access to all environments.
 	Environment types.String `tfsdk:"environment"`
-	// The project this token belongs to.
-	Project types.String `tfsdk:"project"`
+	// The project this token belongs to. Deprecated: use Projects instead.
+	Project types.String `tfsdk:"project" deprecated:"true"`
 	// The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`
 	Projects types.Set `tfsdk:"projects"`
 	// The token's expiration date. NULL if the token doesn't have an expiration set.
