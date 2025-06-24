@@ -68,7 +68,6 @@ jobs:
           - "1.3.*"
           - "1.4.*"
         docker-image:
-          - "unleashorg/unleash-enterprise:5"
           - "unleashorg/unleash-server:5"
           - "unleashorg/unleash-enterprise:6"
           - "unleashorg/unleash-server:6"
@@ -95,4 +94,5 @@ jobs:
           TF_ACC: "1"
           #TF_LOG: "debug"
           UNLEASH_ENTERPRISE: "${{ contains(matrix.docker-image, 'unleash-enterprise') }}"
+          DEFAULT_ENVIRONMENT: "${{ contains(matrix.docker-image, 'latest')? 'development' : 'default' }}"
         timeout-minutes: 3
