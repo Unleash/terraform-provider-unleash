@@ -89,9 +89,10 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 			},
 			"project": schema.StringAttribute{
-				Description: "A project the token belongs to.",
-				Optional:    true,
-				Computed:    true,
+				Description:        "A project the token belongs to.",
+				Optional:           true,
+				Computed:           true,
+				DeprecationMessage: "Don't use. Use projects instead. This attribute will not work against Unleash v7",
 			},
 			"projects": schema.SetAttribute{
 				Description: "The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.",
