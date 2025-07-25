@@ -118,7 +118,11 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 	configuration.AddDefaultHeader("Authorization", authorization)
 	apiClient := unleash.NewAPIClient(configuration)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	timeoutSeconds := 30 // Default timeout
+	if envTimeout, err := strconv.Atoi(os.Getenv("TEST_TIMEOUT_SECONDS")); err == nil && envTimeout > 0 {
+		timeoutSeconds = envTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
 	defer cancel()
 
 	// loop through the resources in state, verifying each widget
