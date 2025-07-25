@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -116,6 +117,9 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 	configuration.HTTPClient = httpClient(false)
 	configuration.AddDefaultHeader("Authorization", authorization)
 	apiClient := unleash.NewAPIClient(configuration)
+	
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// loop through the resources in state, verifying each widget
 	// is destroyed
@@ -129,7 +133,7 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 			return fmt.Errorf("Expected an integer")
 		}
 
-		user, response, err := apiClient.UsersAPI.GetUser(context.Background(), int32(userId)).Execute()
+		user, response, err := apiClient.UsersAPI.GetUser(ctx, int32(userId)).Execute()
 		if err == nil {
 			if fmt.Sprintf("%v", user.Id) == rs.Primary.ID {
 				return fmt.Errorf("User (%s) still exists.", rs.Primary.ID)

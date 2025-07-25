@@ -119,13 +119,13 @@ func (r *contextFieldResource) Create(ctx context.Context, req resource.CreateRe
 	createContextFieldRequest := *unleash.NewCreateContextFieldSchemaWithDefaults()
 	createContextFieldRequest.Name = *plan.Name.ValueStringPointer()
 
-	var contextErr = populateContextField(&createContextFieldRequest, plan)
+	var contextErr = populateContextField(ctx, &createContextFieldRequest, plan)
 	if contextErr != nil {
 		resp.Diagnostics.AddError("error populating context field", contextErr.Error())
 		return
 	}
 
-	var contextField, httpRes, err = r.client.ContextAPI.CreateContextField(context.Background()).CreateContextFieldSchema(createContextFieldRequest).Execute()
+	var contextField, httpRes, err = r.client.ContextAPI.CreateContextField(ctx).CreateContextFieldSchema(createContextFieldRequest).Execute()
 	if !ValidateApiResponse(httpRes, 201, &resp.Diagnostics, err) {
 		return
 	}
@@ -145,7 +145,7 @@ func (r *contextFieldResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	contextField, httpRes, err := r.client.ContextAPI.GetContextField(context.Background(), state.Name.ValueString()).Execute()
+	contextField, httpRes, err := r.client.ContextAPI.GetContextField(ctx, state.Name.ValueString()).Execute()
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
 	}
@@ -166,18 +166,18 @@ func (r *contextFieldResource) Update(ctx context.Context, req resource.UpdateRe
 
 	updateContextFieldRequest := *unleash.NewUpdateContextFieldSchemaWithDefaults()
 
-	var contextErr = populateContextField(&updateContextFieldRequest, plan)
+	var contextErr = populateContextField(ctx, &updateContextFieldRequest, plan)
 	if contextErr != nil {
 		resp.Diagnostics.AddError("error populating context field", contextErr.Error())
 		return
 	}
 
-	var httpRes, err = r.client.ContextAPI.UpdateContextField(context.Background(), plan.Name.ValueString()).UpdateContextFieldSchema(updateContextFieldRequest).Execute()
+	var httpRes, err = r.client.ContextAPI.UpdateContextField(ctx, plan.Name.ValueString()).UpdateContextFieldSchema(updateContextFieldRequest).Execute()
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
 	}
 
-	contextField, httpRes, err := r.client.ContextAPI.GetContextField(context.Background(), plan.Name.ValueString()).Execute()
+	contextField, httpRes, err := r.client.ContextAPI.GetContextField(ctx, plan.Name.ValueString()).Execute()
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
 	}
@@ -197,7 +197,7 @@ func (r *contextFieldResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	httpRes, err := r.client.ContextAPI.DeleteContextField(context.Background(), state.Name.ValueString()).Execute()
+	httpRes, err := r.client.ContextAPI.DeleteContextField(ctx, state.Name.ValueString()).Execute()
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
 	}
@@ -265,7 +265,7 @@ func (m *contextFieldResourceModel) hydrateFromApi(api unleash.ContextFieldSchem
 	)
 }
 
-func populateContextField(request ContextFieldSetter, plan contextFieldResourceModel) error {
+func populateContextField(ctx context.Context, request ContextFieldSetter, plan contextFieldResourceModel) error {
 	if !plan.Description.IsNull() {
 		request.SetDescription(*plan.Description.ValueStringPointer())
 	}
@@ -277,7 +277,7 @@ func populateContextField(request ContextFieldSetter, plan contextFieldResourceM
 	}
 
 	if !plan.LegalValues.IsNull() && !plan.LegalValues.IsUnknown() {
-		legalValuesList, diags := plan.LegalValues.ToListValue(context.Background())
+		legalValuesList, diags := plan.LegalValues.ToListValue(ctx)
 		if diags.HasError() {
 			return fmt.Errorf("error extracting legal values: %s", diags)
 		}
