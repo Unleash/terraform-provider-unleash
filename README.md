@@ -49,6 +49,7 @@ TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
 
 To run enterprise tests (you have to make sure you're running an enterprise server)
+
 ```shell
 UNLEASH_ENTERPRISE=true TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
@@ -61,7 +62,7 @@ make testacc
 
 ### Before pushing
 
-- `golangci-lint run --fix` to lint the code
+- `golangci-lint run --fix` to lint the code (You can install it with `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`)
 - `go generate ./...` to update docs
 
 ## Using the provider

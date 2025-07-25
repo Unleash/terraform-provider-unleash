@@ -117,7 +117,7 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 	configuration.HTTPClient = httpClient(false)
 	configuration.AddDefaultHeader("Authorization", authorization)
 	apiClient := unleash.NewAPIClient(configuration)
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
