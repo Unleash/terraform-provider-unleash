@@ -7,10 +7,53 @@ import (
 	"strconv"
 	"testing"
 
-	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+// testAccDeleteUserFromAPI is a custom TestCheckFunc that deletes the user from the API
+// This simulates external deletion to test Terraform's ability to handle resources deleted outside of Terraform.
+func testAccDeleteUserFromAPI(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Resource not found: %s", resourceName)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No ID is set")
+		}
+
+		// Create client using the same configuration as the provider
+		config := &UnleashConfiguration{
+			BaseUrl:       types.StringNull(), // Will use environment variable
+			Authorization: types.StringNull(), // Will use environment variable
+		}
+
+		var diagnostics diag.Diagnostics
+		provider := &UnleashProvider{version: "test"}
+		client := unleashClient(context.Background(), provider, config, &diagnostics)
+
+		if diagnostics.HasError() {
+			return fmt.Errorf("Failed to create test client: %v", diagnostics.Errors())
+		}
+
+		idInt, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Failed to convert user id to int: %v", err)
+		}
+
+		id := int32(idInt)
+		_, err = client.UsersAPI.DeleteUser(context.Background(), id).Execute()
+		if err != nil {
+			return fmt.Errorf("Failed to delete user: %v", err)
+		}
+
+		return nil
+	}
+}
 
 func testAccSampleUserResource(name string) string {
 	return fmt.Sprintf(`
@@ -60,6 +103,22 @@ func TestAccUserResource(t *testing.T) {
 				),
 			},
 			{
+				ExpectNonEmptyPlan: true,
+				Config:             testAccSampleUserResource("Renamed user"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccDeleteUserFromAPI("unleash_user.the_newbie"),
+				),
+			},
+			{
+				Config: testAccSampleUserResource("Renamed user"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_user.the_newbie", "id"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "name", "Renamed user"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "email", "test@getunleash.io"),
+					resource.TestCheckResourceAttr("unleash_user.the_newbie", "root_role", "2"),
+				),
+			},
+			{
 				Config: testAccSampleUserResourceWithPassword("with_pass", "User with password"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_user.with_pass", "id"),
@@ -104,18 +163,19 @@ func TestAccUserResourceImport(t *testing.T) {
 }
 
 func testAccCheckUserResourceDestroy(s *terraform.State) error {
-	// TODO retrieve the client from Provider configuration rather than creating a new client
-	configuration := unleash.NewConfiguration()
-	base_url := os.Getenv("UNLEASH_URL")
-	authorization := os.Getenv("AUTH_TOKEN")
-	configuration.Servers = unleash.ServerConfigurations{
-		{
-			URL: base_url,
-		},
+	// Use the same client configuration as the provider instead of creating a new one
+	config := &UnleashConfiguration{
+		BaseUrl:       types.StringNull(), // Will use environment variable
+		Authorization: types.StringNull(), // Will use environment variable
 	}
-	configuration.HTTPClient = httpClient(false)
-	configuration.AddDefaultHeader("Authorization", authorization)
-	apiClient := unleash.NewAPIClient(configuration)
+
+	var diagnostics diag.Diagnostics
+	provider := &UnleashProvider{version: "test"}
+	apiClient := unleashClient(context.Background(), provider, config, &diagnostics)
+
+	if diagnostics.HasError() {
+		return fmt.Errorf("Failed to create test client: %v", diagnostics.Errors())
+	}
 
 	// loop through the resources in state, verifying each widget
 	// is destroyed
