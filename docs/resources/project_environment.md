@@ -17,7 +17,6 @@ ProjectEnvironment schema
 
 ### Required
 
-- `enabled` (Boolean) If the environment is enabled for this project. This affects whether or not users will be able to enable flags for this environment on this project.
 - `environment_name` (String) Environment identifier, equivalen	t to the environment name.
 - `project_id` (String) Project identifier.
 
