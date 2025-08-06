@@ -31,13 +31,11 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 					resource "unleash_project_environment" "approvals" {
 						project_id = unleash_project.galaxy-wide-energy.id
 						environment_name = unleash_environment.space.name
-						enabled = true
 						change_requests_enabled = true
 						required_approvals = 2
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "enabled", "true"),
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "true"),
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "required_approvals", "2"),
 				),
@@ -57,7 +55,6 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 					resource "unleash_project_environment" "approvals" {
 						project_id = unleash_project.galaxy-wide-energy.id
 						environment_name = unleash_environment.space.name
-						enabled = true
 						change_requests_enabled = true
 						required_approvals = 20
 					}
@@ -79,7 +76,6 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 					resource "unleash_project_environment" "approvals" {
 						project_id = unleash_project.galaxy-wide-energy.id
 						environment_name = unleash_environment.space.name
-						enabled = true
 						change_requests_enabled = true
 						required_approvals = 0
 					}
@@ -101,37 +97,12 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 					resource "unleash_project_environment" "approvals" {
 						project_id = unleash_project.galaxy-wide-energy.id
 						environment_name = unleash_environment.space.name
-						enabled = true
 						change_requests_enabled = false
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "enabled", "true"),
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "false"),
 					resource.TestCheckNoResourceAttr("unleash_project_environment.approvals", "required_approvals"),
-				),
-			},
-			{
-				Config: `
-					resource "unleash_project" "galaxy-wide-energy" {
-						id = "dysonsphere"
-						name = "dysonsphere"
-					}
-
-					resource "unleash_environment" "space" {
-						name = "outerspace"
-						type = "vacuum"
-					}
-
-					resource "unleash_project_environment" "approvals" {
-						project_id = unleash_project.galaxy-wide-energy.id
-						environment_name = unleash_environment.space.name
-						enabled = false
-					}
-				`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "enabled", "false"),
-					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "false"),
 				),
 			},
 			{
@@ -149,12 +120,10 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 					resource "unleash_project_environment" "approvals" {
 						project_id = unleash_project.galaxy-wide-energy.id
 						environment_name = unleash_environment.testing.name
-						enabled = true
 						change_requests_enabled = true
 					}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "enabled", "true"),
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "true"),
 					// Fresh creation should clamp this value to 1
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "required_approvals", "1"),

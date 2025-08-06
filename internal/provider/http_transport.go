@@ -23,7 +23,6 @@ type debugTransport struct {
 }
 
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	tflog.Info(req.Context(), fmt.Sprintf("Enable debug logging %v", t.EnableDebug))
 	if t.EnableDebug {
 		// Log the request details
 		requestDump, _ := httputil.DumpRequestOut(req, true)
@@ -35,12 +34,11 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	if err != nil {
 		tflog.Error(req.Context(), err.Error())
-
-		// only log the response details in case of error to avoid leaking sensitive data
-		if t.EnableDebug && resp != nil {
-			responseDump, _ := httputil.DumpResponse(resp, true)
-			tflog.Error(req.Context(), fmt.Sprintf("Response:\n%s", responseDump))
-		}
+	}
+	if t.EnableDebug {
+		// Log the response details
+		responseDump, _ := httputil.DumpResponse(resp, true)
+		tflog.Debug(req.Context(), fmt.Sprintf("Response:\n%s", responseDump))
 	}
 
 	return resp, err
