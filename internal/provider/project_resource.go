@@ -186,6 +186,8 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading project data source", map[string]any{"success": true})
 }
+
+func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	tflog.Debug(ctx, "Preparing to update project resource")
 	var state projectResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
