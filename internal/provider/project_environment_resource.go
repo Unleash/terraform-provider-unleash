@@ -155,9 +155,26 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
+	projectId := state.ProjectId.ValueString()
+	envName := state.EnvironmentName.ValueString()
 
-	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(context.Background(), projectId).Execute()
+
+	if !ValidateReadApiResponse(ctx, getResponse, getErr, resp, projectId, "Project") {
+		return
+	}
+
+	var envChangeRequestConfig *unleash.ChangeRequestEnvironmentConfigSchema
+	for i := range config {
+		if config[i].Environment == envName {
+			envChangeRequestConfig = &config[i]
+			break
+		}
+	}
+
+	if envChangeRequestConfig == nil {
+		tflog.Warn(ctx, fmt.Sprintf("Project environment %s/%s not found, removing from state", projectId, envName))
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

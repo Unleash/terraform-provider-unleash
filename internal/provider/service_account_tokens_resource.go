@@ -177,16 +177,17 @@ func (r *serviceAccountTokensResource) Read(ctx context.Context, req resource.Re
 	}
 
 	var serviceAccountToken *unleash.PatSchema
-
+	tokenId := state.Id.ValueInt64()
 	for i := range serviceAccountTokens.Pats {
-		if serviceAccountTokens.Pats[i].Id == int32(state.Id.ValueInt64()) {
+		if int64(serviceAccountTokens.Pats[i].Id) == tokenId {
 			serviceAccountToken = &serviceAccountTokens.Pats[i]
 			break
 		}
 	}
 
 	if serviceAccountToken == nil {
-		resp.Diagnostics.AddError("Service account token not found", "no service account token found with the given ID")
+		tflog.Warn(ctx, fmt.Sprintf("Service account token with id %d not found, removing from state", tokenId))
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

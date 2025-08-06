@@ -1,10 +1,13 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 func ValidateApiResponse(response *http.Response, code int, diagnostics *diag.Diagnostics, err error) bool {
@@ -40,4 +43,18 @@ func IsValidApiResponse(response *http.Response, codes []int, diagnostics *diag.
 	)
 
 	return false
+}
+
+func ValidateReadApiResponse(ctx context.Context, response *http.Response, err error, resp *resource.ReadResponse, resourceId string, resourceName string) bool {
+	if response != nil && response.StatusCode == 404 {
+		tflog.Warn(ctx, fmt.Sprintf("%s with id %s not found, removing from state", resourceName, resourceId))
+		resp.State.RemoveResource(ctx)
+		return false
+	}
+
+	if !ValidateApiResponse(response, 200, &resp.Diagnostics, err) {
+		return false
+	}
+
+	return true
 }

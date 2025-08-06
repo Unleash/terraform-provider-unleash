@@ -117,7 +117,7 @@ func (r *environmentResource) Read(ctx context.Context, req resource.ReadRequest
 
 	environment, apiResponse, err := r.client.EnvironmentsAPI.GetEnvironment(ctx, state.Name.ValueString()).Execute()
 
-	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+	if !ValidateReadApiResponse(ctx, apiResponse, err, resp, state.Name.ValueString(), "Environment") {
 		return
 	}
 
