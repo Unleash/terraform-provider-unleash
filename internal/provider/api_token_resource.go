@@ -204,11 +204,19 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
-	var token unleash.ApiTokenSchema
+
+	var token *unleash.ApiTokenSchema
 	for _, t := range tokens.Tokens {
 		if t.Secret == state.Secret.ValueString() {
-			token = t
+			token = &t
+			break
 		}
+	}
+
+	if token == nil {
+		tflog.Warn(ctx, fmt.Sprintf("API token with secret %s not found, removing from state", state.Secret.ValueString()))
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	// Update model with response

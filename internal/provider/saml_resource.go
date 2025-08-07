@@ -102,6 +102,12 @@ func (r *samlResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
+	if !samlSettings.GetEnabled() {
+		tflog.Warn(ctx, "SAML is not enabled, removing from state")
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	plan.Enabled = types.BoolValue(samlSettings.GetEnabled())
 	plan.Certificate = types.StringValue(samlSettings.GetCertificate())
 	plan.EntityId = types.StringValue(samlSettings.GetEntityId())

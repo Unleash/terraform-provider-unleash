@@ -146,7 +146,7 @@ func (r *contextFieldResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	contextField, httpRes, err := r.client.ContextAPI.GetContextField(ctx, state.Name.ValueString()).Execute()
-	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
+	if !ValidateReadApiResponse(ctx, httpRes, err, resp, state.Name.ValueString(), "Context field") {
 		return
 	}
 

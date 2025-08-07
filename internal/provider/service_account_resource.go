@@ -153,16 +153,17 @@ func (r *serviceAccountResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	var serviceAccount *unleash.ServiceAccountSchema
-
+	accountId := state.Id.ValueInt64()
 	for i := range serviceAccounts.ServiceAccounts {
-		if fmt.Sprintf("%g", serviceAccounts.ServiceAccounts[i].Id) == state.Id.String() {
+		if int64(serviceAccounts.ServiceAccounts[i].Id) == accountId {
 			serviceAccount = &serviceAccounts.ServiceAccounts[i]
 			break
 		}
 	}
 
 	if serviceAccount == nil {
-		resp.Diagnostics.AddError("Service account not found", "no service account found with the given ID")
+		tflog.Warn(ctx, fmt.Sprintf("Service account with id %d not found, removing from state", accountId))
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

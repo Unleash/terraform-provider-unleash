@@ -150,23 +150,25 @@ func (r *projectResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	projectId := state.Id.ValueString()
 	projects, api_response, err := r.client.ProjectsAPI.GetProjects(ctx).Execute()
 
-	tflog.Debug(ctx, "Searching for project", map[string]any{"id": state.Id.ValueString()})
-	var project unleash.ProjectSchema
-	for _, p := range projects.Projects {
-		if p.Id == state.Id.ValueString() {
-			project = p
-		}
-	}
-
-	// validate if project was found
-	if project.Id == "" {
-		resp.Diagnostics.AddError(fmt.Sprintf("Project with id %s not found", state.Id.ValueString()), "NotFound")
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
 		return
 	}
 
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+	tflog.Debug(ctx, "Searching for project", map[string]any{"id": projectId})
+	var project *unleash.ProjectSchema
+	for i := range projects.Projects {
+		if projects.Projects[i].Id == projectId {
+			project = &projects.Projects[i]
+			break
+		}
+	}
+
+	if project == nil {
+		tflog.Warn(ctx, fmt.Sprintf("Project with id %s not found, removing from state", projectId))
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

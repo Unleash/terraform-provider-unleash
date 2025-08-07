@@ -197,7 +197,7 @@ func (r *roleResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	roleId := state.Id.ValueString()
 	role, api_response, err := r.client.UsersAPI.GetRoleById(ctx, roleId).Execute()
 
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+	if !ValidateReadApiResponse(ctx, api_response, err, resp, roleId, "Role") {
 		return
 	}
 
