@@ -96,7 +96,7 @@ func (r *oidcResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	tflog.Debug(ctx, "Preparing to read OIDC configuration")
 	var plan oidcResourceModel
 
-	oidcSettings, httpRes, err := r.client.AuthAPI.GetOidcSettings(context.Background()).Execute()
+	oidcSettings, httpRes, err := r.client.AuthAPI.GetOidcSettings(ctx).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
@@ -123,7 +123,7 @@ func (r *oidcResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	oidcSettingsResponse, err := updateOidcConfig(plan, r.client, &resp.Diagnostics)
+	oidcSettingsResponse, err := updateOidcConfig(ctx, plan, r.client, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update OIDC configuration", err.Error())
 		return
@@ -149,7 +149,7 @@ func (r *oidcResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	oidcSettingsResponse, err := updateOidcConfig(plan, r.client, &resp.Diagnostics)
+	oidcSettingsResponse, err := updateOidcConfig(ctx, plan, r.client, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update OIDC configuration", err.Error())
 		return
@@ -185,7 +185,7 @@ func (r *oidcResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		OidcSettingsSchemaOneOf: innerSettings,
 	}
 
-	_, httpRes, err := r.client.AuthAPI.SetOidcSettings(context.Background()).OidcSettingsSchema(oidcSettings).Execute()
+	_, httpRes, err := r.client.AuthAPI.SetOidcSettings(ctx).OidcSettingsSchema(oidcSettings).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
@@ -197,9 +197,9 @@ func (r *oidcResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 	tflog.Debug(ctx, "OIDC configuration cleared")
 }
 
-func updateOidcConfig(plan oidcResourceModel, apiClient *client.APIClient, diagnostics *diag.Diagnostics) (*client.OidcSettingsResponseSchema, error) {
+func updateOidcConfig(ctx context.Context, plan oidcResourceModel, apiClient *client.APIClient, diagnostics *diag.Diagnostics) (*client.OidcSettingsResponseSchema, error) {
 
-	preOidcSettings, preHttpRes, preErr := apiClient.AuthAPI.GetOidcSettings(context.Background()).Execute()
+	preOidcSettings, preHttpRes, preErr := apiClient.AuthAPI.GetOidcSettings(ctx).Execute()
 
 	if !ValidateApiResponse(preHttpRes, 200, diagnostics, preErr) {
 		return nil, preErr
@@ -243,14 +243,14 @@ func updateOidcConfig(plan oidcResourceModel, apiClient *client.APIClient, diagn
 		OidcSettingsSchemaOneOf: innerSettings,
 	}
 
-	_, httpRes, err := apiClient.AuthAPI.SetOidcSettings(context.Background()).OidcSettingsSchema(oidcSettings).Execute()
+	_, httpRes, err := apiClient.AuthAPI.SetOidcSettings(ctx).OidcSettingsSchema(oidcSettings).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, diagnostics, err) {
 		return nil, err
 	}
 
 	// the post request does not return everything, so we need to do another get to get the full object
-	oidcSettingsResponse, httpRes, err := apiClient.AuthAPI.GetOidcSettings(context.Background()).Execute()
+	oidcSettingsResponse, httpRes, err := apiClient.AuthAPI.GetOidcSettings(ctx).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, diagnostics, err) {
 		return nil, err

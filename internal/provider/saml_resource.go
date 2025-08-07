@@ -96,7 +96,7 @@ func (r *samlResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	tflog.Debug(ctx, "Preparing to read SAML configuration")
 	var plan samlResourceModel
 
-	samlSettings, httpRes, err := r.client.AuthAPI.GetSamlSettings(context.Background()).Execute()
+	samlSettings, httpRes, err := r.client.AuthAPI.GetSamlSettings(ctx).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, &resp.Diagnostics, err) {
 		return
@@ -122,7 +122,7 @@ func (r *samlResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	samlSettingsResponse, err := updateSamlConfig(plan, r.client, &resp.Diagnostics)
+	samlSettingsResponse, err := updateSamlConfig(ctx, plan, r.client, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create SAML configuration", err.Error())
 		return
@@ -148,7 +148,7 @@ func (r *samlResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
-	samlSettingsResponse, err := updateSamlConfig(plan, r.client, &resp.Diagnostics)
+	samlSettingsResponse, err := updateSamlConfig(ctx, plan, r.client, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update SAML configuration", err.Error())
 		return
@@ -168,8 +168,8 @@ func (r *samlResource) Update(ctx context.Context, req resource.UpdateRequest, r
 func (r *samlResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 }
 
-func updateSamlConfig(plan samlResourceModel, apiClient *client.APIClient, diagnostics *diag.Diagnostics) (*client.SamlSettingsResponseSchema, error) {
-	preSamlSettings, preHttpRes, preErr := apiClient.AuthAPI.GetSamlSettings(context.Background()).Execute()
+func updateSamlConfig(ctx context.Context, plan samlResourceModel, apiClient *client.APIClient, diagnostics *diag.Diagnostics) (*client.SamlSettingsResponseSchema, error) {
+	preSamlSettings, preHttpRes, preErr := apiClient.AuthAPI.GetSamlSettings(ctx).Execute()
 
 	if !ValidateApiResponse(preHttpRes, 200, diagnostics, preErr) {
 		return nil, preErr
@@ -213,14 +213,14 @@ func updateSamlConfig(plan samlResourceModel, apiClient *client.APIClient, diagn
 		SamlSettingsSchemaOneOf: innerSettings,
 	}
 
-	_, httpRes, err := apiClient.AuthAPI.SetSamlSettings(context.Background()).SamlSettingsSchema(samlSettings).Execute()
+	_, httpRes, err := apiClient.AuthAPI.SetSamlSettings(ctx).SamlSettingsSchema(samlSettings).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, diagnostics, err) {
 		return nil, err
 	}
 
 	// Gotta do a second get because the response from the post is missing some fields
-	samlSettingsResponse, httpRes, err := apiClient.AuthAPI.GetSamlSettings(context.Background()).Execute()
+	samlSettingsResponse, httpRes, err := apiClient.AuthAPI.GetSamlSettings(ctx).Execute()
 
 	if !ValidateApiResponse(httpRes, 200, diagnostics, err) {
 		return nil, err

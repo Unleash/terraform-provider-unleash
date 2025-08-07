@@ -122,7 +122,7 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
 	updateProjectSettingsRequest.SetMode(mode)
 
-	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(context.Background(), *plan.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
+	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(ctx, *plan.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
 
 	if !ValidateApiResponse(updateSettingsResponse, 200, &resp.Diagnostics, err) {
 		return
@@ -209,7 +209,7 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
 	updateProjectSettingsRequest.SetMode(mode)
 
-	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(context.Background(), *state.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
+	updateSettingsResponse, err := r.client.ProjectsAPI.UpdateProjectEnterpriseSettings(ctx, *state.Id.ValueStringPointer()).UpdateProjectEnterpriseSettingsSchema(updateProjectSettingsRequest).Execute()
 
 	if !ValidateApiResponse(updateSettingsResponse, 200, &resp.Diagnostics, err) {
 		return

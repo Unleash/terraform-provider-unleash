@@ -86,7 +86,7 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	config, getResponse, getErr := d.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(context.Background(), state.ProjectId.ValueString()).Execute()
+	config, getResponse, getErr := d.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
 
 	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return

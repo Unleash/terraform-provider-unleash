@@ -132,7 +132,7 @@ func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(context.Background(), plan.ProjectId.ValueString()).Execute()
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, plan.ProjectId.ValueString()).Execute()
 
 	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return
@@ -155,7 +155,7 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(context.Background(), state.ProjectId.ValueString()).Execute()
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
 
 	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return
@@ -182,7 +182,7 @@ func (r *projectEnvironmentResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(context.Background(), plan.ProjectId.ValueString()).Execute()
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, plan.ProjectId.ValueString()).Execute()
 
 	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return
