@@ -190,9 +190,15 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Get fresh data
-	user, api_response, err := r.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
+	user, httpResponse, err := r.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
 
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+	if httpResponse != nil && httpResponse.StatusCode == 404 {
+		tflog.Warn(ctx, fmt.Sprintf("User with id %s not found, removing from state", state.Id.ValueString()))
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	if !ValidateApiResponse(httpResponse, 200, &resp.Diagnostics, err) {
 		return
 	}
 
