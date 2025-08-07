@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -117,7 +116,6 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 	configuration.HTTPClient = httpClient(false)
 	configuration.AddDefaultHeader("Authorization", authorization)
 	apiClient := unleash.NewAPIClient(configuration)
-
 
 	// loop through the resources in state, verifying each widget
 	// is destroyed
