@@ -131,7 +131,7 @@ func testAccCheckUserResourceDestroy(s *terraform.State) error {
 			return fmt.Errorf("Expected an integer")
 		}
 
-		user, response, err := apiClient.UsersAPI.GetUser(ctx, int32(userId)).Execute()
+		user, response, err := apiClient.UsersAPI.GetUser(context.Background(), int32(userId)).Execute()
 		if err == nil {
 			if fmt.Sprintf("%v", user.Id) == rs.Primary.ID {
 				return fmt.Errorf("User (%s) still exists.", rs.Primary.ID)
