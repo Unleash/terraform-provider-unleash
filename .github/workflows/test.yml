@@ -88,7 +88,7 @@ jobs:
         run: docker compose up -d --wait -t 90
         env:
           UNLEASH_DOCKER_IMAGE: ${{ matrix.docker-image }}
-          UNLEASH_DEV_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
+          UNLEASH_LICENSE: ${{ secrets.UNLEASH_DEV_LICENSE }}
       - name: Define default environment for old versions compatibility
         run: echo "DEFAULT_ENVIRONMENT=default" >> $GITHUB_ENV
         if: endsWith(matrix.docker-image, ':5') || endsWith(matrix.docker-image, ':6')
