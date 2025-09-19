@@ -4,10 +4,10 @@ page_title: "unleash_service_account_token Resource - terraform-provider-unleash
 subcategory: ""
 description: |-
   Allows for managing the tokens bound to a service account. Note that service account tokens in Unleash
-          are both immutable and cannot be recovered once created. This means you must use them immediately when creating them via terraform.
-          Typically by piping them to an external secret manager or binding them to some other external terraform resource that requires Unleash tokens.
-      Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
-      meaning that the secrets will be rotated out.
+  are both immutable and cannot be recovered once created. This means you must use them immediately when creating them via terraform.
+  Typically by piping them to an external secret manager or binding them to some other external terraform resource that requires Unleash tokens.
+  	Because service account tokens are immutable, any changes to the terraform resource will trigger a deletion and recreation of those tokens,
+  	meaning that the secrets will be rotated out.
 ---
 
 # unleash_service_account_token (Resource)
