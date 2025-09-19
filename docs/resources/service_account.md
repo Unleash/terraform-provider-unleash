@@ -4,10 +4,10 @@ page_title: "unleash_service_account Resource - terraform-provider-unleash"
 subcategory: ""
 description: |-
   Service accounts do nothing on their own, they need service account tokens to be created to do anything useful.
-          All tokens bound to a service account will take on the permissions of the root role assigned to the service account. It's strongly
-          recommended to use the unleash_role data source to retrieve one of the built-in roles and use the id from that to set the service account
-          role id.
-      See the [Unleash documentation](https://docs.getunleash.io/reference/service-accounts) for more information.
+  All tokens bound to a service account will take on the permissions of the root role assigned to the service account. It's strongly
+  recommended to use the unleash_role data source to retrieve one of the built-in roles and use the id from that to set the service account
+  role id.
+  	See the [Unleash documentation](https://docs.getunleash.io/reference/service-accounts) for more information.
 ---
 
 # unleash_service_account (Resource)
