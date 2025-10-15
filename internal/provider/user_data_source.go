@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -63,7 +64,8 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this user.",
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"email": schema.StringAttribute{
 				Description: "The email of the user.",
@@ -91,46 +93,119 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 // Read refreshes the Terraform state with the latest data.
 func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	tflog.Debug(ctx, "Preparing to read user data source")
-	var state userDataSourceModel
+	var config userDataSourceModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...) // capture user input
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	userId, err := strconv.Atoi(state.Id.ValueString())
-	if err != nil {
+	if config.Id.IsUnknown() {
+		resp.Diagnostics.AddError("Cannot use unknown value for id", "Provide a concrete id or omit it in favour of the email lookup.")
+		return
+	}
+	if config.Email.IsUnknown() {
+		resp.Diagnostics.AddError("Cannot use unknown value for email", "Provide a concrete email or omit it in favour of the id lookup.")
+		return
+	}
+
+	idProvided := !config.Id.IsNull() && config.Id.ValueString() != ""
+	emailProvided := !config.Email.IsNull() && config.Email.ValueString() != ""
+
+	if !idProvided && !emailProvided {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
-			err.Error(),
+			"Missing lookup attribute",
+			"Specify either the user's id or email to retrieve the user.",
 		)
 		return
 	}
 
-	user, api_response, err := d.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-		return
+	var user *unleash.UserSchema
+
+	if idProvided {
+		idValue, err := strconv.Atoi(config.Id.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("User id was not a number %s", config.Id.ValueString()),
+				err.Error(),
+			)
+			return
+		}
+
+		apiUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, int32(idValue)).Execute()
+		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+			return
+		}
+		user = apiUser
+
+		if emailProvided {
+			if apiUser.Email == nil || !strings.EqualFold(*apiUser.Email, config.Email.ValueString()) {
+				resp.Diagnostics.AddError(
+					"User id and email mismatch",
+					fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", config.Id.ValueString(), valueOrEmpty(apiUser.Email), config.Email.ValueString()),
+				)
+				return
+			}
+		}
+	} else {
+		email := config.Email.ValueString()
+		searchResult, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
+		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+			return
+		}
+
+		for i := range searchResult.Users {
+			candidate := searchResult.Users[i]
+			if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
+				user = &candidate
+				break
+			}
+		}
+
+		if user == nil {
+			resp.Diagnostics.AddError(
+				"User not found",
+				fmt.Sprintf("No user matched the email %q.", email),
+			)
+			return
+		}
 	}
 
-	// Map response body to model
-	state = userDataSourceModel{
-		Id:       types.StringValue(fmt.Sprintf("%v", user.Id)),
-		RootRole: types.Int64Value(int64(*user.RootRole)),
+	state := userDataSourceModel{
+		Id: types.StringValue(strconv.Itoa(int(user.Id))),
 	}
-	if user.Username.IsSet() {
+
+	if user.RootRole != nil {
+		state.RootRole = types.Int64Value(int64(*user.RootRole))
+	} else {
+		state.RootRole = types.Int64Null()
+	}
+
+	if user.Username.IsSet() && user.Username.Get() != nil {
 		state.Username = types.StringValue(*user.Username.Get())
 	} else {
 		state.Username = types.StringNull()
 	}
+
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Name.IsSet() {
+
+	if user.Name.IsSet() && user.Name.Get() != nil {
 		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}
 
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...) // update state with fresh data
 	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }

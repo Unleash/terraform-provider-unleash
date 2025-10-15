@@ -160,8 +160,8 @@ func (d *permissionDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		Type:        types.StringValue(permission.Type),
 		DisplayName: types.StringValue(permission.DisplayName),
 	}
-	if permission.Environment != nil {
-		state.Environment = types.StringValue(*permission.Environment)
+	if permission.Environment.IsSet() && permission.Environment.Get() != nil {
+		state.Environment = types.StringValue(*permission.Environment.Get())
 	} else {
 		state.Environment = types.StringNull()
 	}
