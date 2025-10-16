@@ -53,7 +53,7 @@ resource "unleash_user" "with_password" {
 - `email` (String) The email of the user.
 - `name` (String) The name of the user.
 - `password` (String, Sensitive) The password of the user.
-- `send_email` (Boolean) Send a welcome email to the customer or not. Defaults to true
+- `send_email` (Boolean) Send a welcome email to the customer or not. Defaults to false
 - `username` (String) The username.
 
 ### Read-Only
