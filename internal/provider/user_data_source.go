@@ -60,7 +60,7 @@ func (d *userDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
 func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch a user.",
+		Description: "Fetch a user by id or email.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this user.",

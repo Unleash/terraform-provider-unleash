@@ -16,11 +16,9 @@ Fetch a user by id or email.
 data "unleash_user" "admin" {
   id = "1"
 }
-```
 
-```terraform
-data "unleash_user" "searchable" {
-  email = "user@example.com"
+data "unleash_user" "search_by_email" {
+  email = "byemail@example.com"
 }
 ```
 
@@ -29,8 +27,8 @@ data "unleash_user" "searchable" {
 
 ### Optional
 
-- `id` (String) Identifier for this user.
 - `email` (String) The email of the user.
+- `id` (String) Identifier for this user.
 - `name` (String) The name of the user.
 - `username` (String) The username of the user.
 
