@@ -28,6 +28,25 @@ resource "unleash_project" "test_project" {
   id          = "my_project"
   name        = "My Terraform project"
   description = "A project created through terraform"
+
+  mode = "protected"
+
+  feature_naming = {
+    pattern     = "^feature_[a-z0-9_-]+$"
+    example     = "feature_user_signup"
+    description = "Feature keys must start with feature_ and use lowercase alphanumerics."
+  }
+
+  link_templates = [
+    {
+      title        = "Product Spec"
+      url_template = "https://docs.example.com/projects/{{project}}/features/{{feature}}"
+    },
+    {
+      title        = "Issue Tracker"
+      url_template = "https://issues.example.com/browse/{{feature}}"
+    }
+  ]
 }
 ```
 
@@ -42,4 +61,30 @@ resource "unleash_project" "test_project" {
 ### Optional
 
 - `description` (String) A description of the project's purpose.
+- `feature_naming` (Attributes) Optional feature naming pattern applied to all features created in this project. (see [below for nested schema](#nestedatt--feature_naming))
+- `link_templates` (Attributes List) Optional list of link templates automatically added to new feature flags. (see [below for nested schema](#nestedatt--link_templates))
 - `mode` (String) The project's collaboration mode. Determines whether non project members can submit change requests and the projects visibility to non members. Valid values are 'open', 'protected' and 'private'. If a value is not set, the project will default to 'open'
+
+<a id="nestedatt--feature_naming"></a>
+### Nested Schema for `feature_naming`
+
+Required:
+
+- `pattern` (String) A JavaScript regular expression pattern, without the start and end delimiters.
+
+Optional:
+
+- `description` (String) A human-readable description of the pattern.
+- `example` (String) An example feature name that matches the pattern.
+
+
+<a id="nestedatt--link_templates"></a>
+### Nested Schema for `link_templates`
+
+Required:
+
+- `url_template` (String) URL template that can contain {{project}} or {{feature}} placeholders.
+
+Optional:
+
+- `title` (String) Link title shown in the Unleash UI.
