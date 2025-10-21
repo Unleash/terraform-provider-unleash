@@ -93,7 +93,7 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Required:    true,
 			},
 			"send_email": schema.BoolAttribute{
-				Description: "Send a welcome email to the customer or not. Defaults to true",
+				Description: "Send a welcome email to the customer or not. Defaults to false",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
