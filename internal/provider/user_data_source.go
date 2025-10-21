@@ -157,7 +157,11 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		for i := range searchResult.Users {
 			candidate := searchResult.Users[i]
 			if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
-				user = &candidate
+				detailedUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, candidate.Id).Execute()
+				if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+					return
+				}
+				user = detailedUser
 				break
 			}
 		}
