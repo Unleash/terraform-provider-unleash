@@ -138,14 +138,12 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		}
 		user = apiUser
 
-		if emailProvided {
-			if apiUser.Email == nil || !strings.EqualFold(*apiUser.Email, config.Email.ValueString()) {
-				resp.Diagnostics.AddError(
-					"User id and email mismatch",
-					fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", config.Id.ValueString(), valueOrEmpty(apiUser.Email), config.Email.ValueString()),
-				)
-				return
-			}
+		if emailProvided && !emailMatches(apiUser.Email, config.Email.ValueString()) {
+			resp.Diagnostics.AddError(
+				"User id and email mismatch",
+				fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", config.Id.ValueString(), valueOrEmpty(apiUser.Email), config.Email.ValueString()),
+			)
+			return
 		}
 	} else {
 		email := config.Email.ValueString()
@@ -212,4 +210,8 @@ func valueOrEmpty(value *string) string {
 		return ""
 	}
 	return *value
+}
+
+func emailMatches(actual *string, expected string) bool {
+	return actual != nil && strings.EqualFold(*actual, expected)
 }
