@@ -9,6 +9,7 @@ import (
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -100,79 +101,129 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	if config.Id.IsUnknown() {
-		resp.Diagnostics.AddError("Cannot use unknown value for id", "Provide a concrete id or omit it in favour of the email lookup.")
+	lookup, ok := validateUserLookup(config, &resp.Diagnostics)
+	if !ok {
 		return
+	}
+
+	user, ok := d.fetchUser(ctx, lookup, resp)
+	if !ok {
+		return
+	}
+
+	state := buildUserState(user)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...) // update state with fresh data
+	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func emailMatches(actual *string, expected string) bool {
+	return actual != nil && strings.EqualFold(*actual, expected)
+}
+
+type userLookupInput struct {
+	id            string
+	email         string
+	idProvided    bool
+	emailProvided bool
+}
+
+func validateUserLookup(config userDataSourceModel, diags *diag.Diagnostics) (userLookupInput, bool) {
+	lookup := userLookupInput{}
+
+	if config.Id.IsUnknown() {
+		diags.AddError("Cannot use unknown value for id", "Provide a concrete id or omit it in favour of the email lookup.")
+		return lookup, false
 	}
 	if config.Email.IsUnknown() {
-		resp.Diagnostics.AddError("Cannot use unknown value for email", "Provide a concrete email or omit it in favour of the id lookup.")
-		return
+		diags.AddError("Cannot use unknown value for email", "Provide a concrete email or omit it in favour of the id lookup.")
+		return lookup, false
 	}
 
-	idProvided := !config.Id.IsNull() && config.Id.ValueString() != ""
-	emailProvided := !config.Email.IsNull() && config.Email.ValueString() != ""
+	if !config.Id.IsNull() {
+		lookup.id = config.Id.ValueString()
+		lookup.idProvided = lookup.id != ""
+	}
+	if !config.Email.IsNull() {
+		lookup.email = config.Email.ValueString()
+		lookup.emailProvided = lookup.email != ""
+	}
 
-	if !idProvided && !emailProvided {
-		resp.Diagnostics.AddError(
+	if !lookup.idProvided && !lookup.emailProvided {
+		diags.AddError(
 			"Missing lookup attribute",
 			"Specify either the user's id or email to retrieve the user.",
 		)
-		return
+		return lookup, false
 	}
 
-	var user *unleash.UserSchema
+	return lookup, true
+}
 
-	if idProvided {
-		idValue, err := strconv.Atoi(config.Id.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("User id was not a number %s", config.Id.ValueString()),
-				err.Error(),
-			)
-			return
-		}
+func (d *userDataSource) fetchUser(ctx context.Context, lookup userLookupInput, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	if lookup.idProvided {
+		return d.fetchUserByID(ctx, lookup, resp)
+	}
+	return d.fetchUserByEmail(ctx, lookup.email, resp)
+}
 
-		apiUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, int32(idValue)).Execute()
-		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
-			return
-		}
-		user = apiUser
+func (d *userDataSource) fetchUserByID(ctx context.Context, lookup userLookupInput, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	idValue, err := strconv.Atoi(lookup.id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("User id was not a number %s", lookup.id),
+			err.Error(),
+		)
+		return nil, false
+	}
 
-		if emailProvided && !emailMatches(apiUser.Email, config.Email.ValueString()) {
-			resp.Diagnostics.AddError(
-				"User id and email mismatch",
-				fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", config.Id.ValueString(), valueOrEmpty(apiUser.Email), config.Email.ValueString()),
-			)
-			return
-		}
-	} else {
-		email := config.Email.ValueString()
-		searchResult, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
-		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
-			return
-		}
+	apiUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, int32(idValue)).Execute()
+	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return nil, false
+	}
 
-		for i := range searchResult.Users {
-			candidate := searchResult.Users[i]
-			if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
-				detailedUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, candidate.Id).Execute()
-				if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
-					return
-				}
-				user = detailedUser
-				break
+	if lookup.emailProvided && !emailMatches(apiUser.Email, lookup.email) {
+		resp.Diagnostics.AddError(
+			"User id and email mismatch",
+			fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", lookup.id, valueOrEmpty(apiUser.Email), lookup.email),
+		)
+		return nil, false
+	}
+
+	return apiUser, true
+}
+
+func (d *userDataSource) fetchUserByEmail(ctx context.Context, email string, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	searchResult, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
+	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return nil, false
+	}
+
+	for i := range searchResult.Users {
+		candidate := searchResult.Users[i]
+		if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
+			detailedUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, candidate.Id).Execute()
+			if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+				return nil, false
 			}
-		}
-
-		if user == nil {
-			resp.Diagnostics.AddError(
-				"User not found",
-				fmt.Sprintf("No user matched the email %q.", email),
-			)
-			return
+			return detailedUser, true
 		}
 	}
 
+	resp.Diagnostics.AddError(
+		"User not found",
+		fmt.Sprintf("No user matched the email %q.", email),
+	)
+	return nil, false
+}
+
+func buildUserState(user *unleash.UserSchema) userDataSourceModel {
 	state := userDataSourceModel{
 		Id: types.StringValue(strconv.Itoa(int(user.Id))),
 	}
@@ -201,17 +252,5 @@ func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		state.Name = types.StringNull()
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...) // update state with fresh data
-	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
-}
-
-func valueOrEmpty(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
-}
-
-func emailMatches(actual *string, expected string) bool {
-	return actual != nil && strings.EqualFold(*actual, expected)
+	return state
 }
