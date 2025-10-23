@@ -170,19 +170,19 @@ func (r *projectResource) Create(ctx context.Context, req resource.CreateRequest
 	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
 	updateProjectSettingsRequest.SetMode(mode)
 
-	if featureNaming, set := expandFeatureNaming(plan.FeatureNaming, &resp.Diagnostics); set {
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		updateProjectSettingsRequest.SetFeatureNaming(*featureNaming)
-	} else if resp.Diagnostics.HasError() {
+	featureNaming := expandFeatureNaming(plan.FeatureNaming, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+	if featureNaming != nil {
+		updateProjectSettingsRequest.SetFeatureNaming(*featureNaming)
+	}
 
-	if linkTemplates, set := expandLinkTemplates(plan.LinkTemplates, &resp.Diagnostics); set {
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	linkTemplates := expandLinkTemplates(plan.LinkTemplates, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if linkTemplates != nil {
 		updateProjectSettingsRequest.SetLinkTemplates(linkTemplates)
 	}
 
@@ -284,19 +284,19 @@ func (r *projectResource) Update(ctx context.Context, req resource.UpdateRequest
 	updateProjectSettingsRequest := *unleash.NewUpdateProjectEnterpriseSettingsSchemaWithDefaults()
 	updateProjectSettingsRequest.SetMode(mode)
 
-	if featureNaming, set := expandFeatureNaming(plan.FeatureNaming, &resp.Diagnostics); set {
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		updateProjectSettingsRequest.SetFeatureNaming(*featureNaming)
-	} else if resp.Diagnostics.HasError() {
+	featureNaming := expandFeatureNaming(plan.FeatureNaming, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+	if featureNaming != nil {
+		updateProjectSettingsRequest.SetFeatureNaming(*featureNaming)
+	}
 
-	if linkTemplates, set := expandLinkTemplates(plan.LinkTemplates, &resp.Diagnostics); set {
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	linkTemplates := expandLinkTemplates(plan.LinkTemplates, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if linkTemplates != nil {
 		updateProjectSettingsRequest.SetLinkTemplates(linkTemplates)
 	}
 
@@ -382,19 +382,19 @@ func resolveRequestedMode(plan projectResourceModel) (string, error) {
 	}
 }
 
-func expandFeatureNaming(model *featureNamingModel, diagnostics *diag.Diagnostics) (*unleash.CreateFeatureNamingPatternSchema, bool) {
+func expandFeatureNaming(model *featureNamingModel, diagnostics *diag.Diagnostics) *unleash.CreateFeatureNamingPatternSchema {
 	if model == nil {
-		return nil, false
+		return nil
 	}
 
 	if model.Pattern.IsUnknown() {
 		diagnostics.AddError("Invalid feature_naming.pattern", "feature_naming.pattern cannot be unknown")
-		return nil, false
+		return nil
 	}
 
 	if model.Pattern.IsNull() || model.Pattern.ValueString() == "" {
 		diagnostics.AddError("Invalid feature_naming.pattern", "feature_naming.pattern must be provided and cannot be empty")
-		return nil, false
+		return nil
 	}
 
 	featureNaming := unleash.CreateFeatureNamingPatternSchema{}
@@ -402,7 +402,7 @@ func expandFeatureNaming(model *featureNamingModel, diagnostics *diag.Diagnostic
 
 	if model.Example.IsUnknown() {
 		diagnostics.AddError("Invalid feature_naming.example", "feature_naming.example cannot be unknown")
-		return nil, false
+		return nil
 	}
 
 	if model.Example.IsNull() {
@@ -413,7 +413,7 @@ func expandFeatureNaming(model *featureNamingModel, diagnostics *diag.Diagnostic
 
 	if model.Description.IsUnknown() {
 		diagnostics.AddError("Invalid feature_naming.description", "feature_naming.description cannot be unknown")
-		return nil, false
+		return nil
 	}
 
 	if model.Description.IsNull() {
@@ -422,12 +422,12 @@ func expandFeatureNaming(model *featureNamingModel, diagnostics *diag.Diagnostic
 		featureNaming.SetDescription(model.Description.ValueString())
 	}
 
-	return &featureNaming, true
+	return &featureNaming
 }
 
-func expandLinkTemplates(models []projectLinkTemplateModel, diagnostics *diag.Diagnostics) ([]unleash.ProjectLinkTemplateSchema, bool) {
+func expandLinkTemplates(models []projectLinkTemplateModel, diagnostics *diag.Diagnostics) []unleash.ProjectLinkTemplateSchema {
 	if models == nil {
-		return nil, false
+		return nil
 	}
 
 	templates := make([]unleash.ProjectLinkTemplateSchema, len(models))
@@ -435,19 +435,19 @@ func expandLinkTemplates(models []projectLinkTemplateModel, diagnostics *diag.Di
 	for i, model := range models {
 		if model.UrlTemplate.IsUnknown() {
 			diagnostics.AddError("Invalid link_templates url", fmt.Sprintf("link_templates[%d].url_template cannot be unknown", i))
-			continue
+			return nil
 		}
 
 		if model.UrlTemplate.IsNull() || model.UrlTemplate.ValueString() == "" {
 			diagnostics.AddError("Invalid link_templates url", fmt.Sprintf("link_templates[%d].url_template must be provided and cannot be empty", i))
-			continue
+			return nil
 		}
 
 		template := unleash.NewProjectLinkTemplateSchema(model.UrlTemplate.ValueString())
 
 		if model.Title.IsUnknown() {
 			diagnostics.AddError("Invalid link_templates title", fmt.Sprintf("link_templates[%d].title cannot be unknown", i))
-			continue
+			return nil
 		}
 
 		if model.Title.IsNull() {
@@ -459,5 +459,5 @@ func expandLinkTemplates(models []projectLinkTemplateModel, diagnostics *diag.Di
 		templates[i] = *template
 	}
 
-	return templates, true
+	return templates
 }
