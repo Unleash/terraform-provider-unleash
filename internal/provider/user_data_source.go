@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	datasourcevalidator "github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -59,6 +61,15 @@ func (d *userDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 }
 
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
+func (d *userDataSource) ConfigValidators(_ context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.AtLeastOneOf(
+			path.MatchRoot("id"),
+			path.MatchRoot("email"),
+		),
+	}
+}
+
 func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Fetch a user by id or email.",
@@ -153,14 +164,6 @@ func validateUserLookup(config userDataSourceModel, diags *diag.Diagnostics) (us
 	if !config.Email.IsNull() {
 		lookup.email = config.Email.ValueString()
 		lookup.emailProvided = lookup.email != ""
-	}
-
-	if !lookup.idProvided && !lookup.emailProvided {
-		diags.AddError(
-			"Missing lookup attribute",
-			"Specify either the user's id or email to retrieve the user.",
-		)
-		return lookup, false
 	}
 
 	return lookup, true
