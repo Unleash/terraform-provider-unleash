@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	datasourcevalidator "github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -57,13 +61,23 @@ func (d *userDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 }
 
 // Schema defines the schema for the data source. TODO: can we transform OpenAPI schema into TF schema?
+func (d *userDataSource) ConfigValidators(_ context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.AtLeastOneOf(
+			path.MatchRoot("id"),
+			path.MatchRoot("email"),
+		),
+	}
+}
+
 func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch a user.",
+		Description: "Fetch a user by id or email.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this user.",
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"email": schema.StringAttribute{
 				Description: "The email of the user.",
@@ -91,46 +105,155 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 // Read refreshes the Terraform state with the latest data.
 func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	tflog.Debug(ctx, "Preparing to read user data source")
-	var state userDataSourceModel
+	var config userDataSourceModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...) // capture user input
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	userId, err := strconv.Atoi(state.Id.ValueString())
+	lookup, ok := validateUserLookup(config, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+
+	user, ok := d.fetchUser(ctx, lookup, resp)
+	if !ok {
+		return
+	}
+
+	state := buildUserState(user)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...) // update state with fresh data
+	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func emailMatches(actual *string, expected string) bool {
+	return actual != nil && strings.EqualFold(*actual, expected)
+}
+
+type userLookupInput struct {
+	id            string
+	email         string
+	idProvided    bool
+	emailProvided bool
+}
+
+func validateUserLookup(config userDataSourceModel, diags *diag.Diagnostics) (userLookupInput, bool) {
+	lookup := userLookupInput{}
+
+	if config.Id.IsUnknown() {
+		diags.AddError("Cannot use unknown value for id", "Provide a concrete id or omit it in favour of the email lookup.")
+		return lookup, false
+	}
+	if config.Email.IsUnknown() {
+		diags.AddError("Cannot use unknown value for email", "Provide a concrete email or omit it in favour of the id lookup.")
+		return lookup, false
+	}
+
+	if !config.Id.IsNull() {
+		lookup.id = config.Id.ValueString()
+		lookup.idProvided = lookup.id != ""
+	}
+	if !config.Email.IsNull() {
+		lookup.email = config.Email.ValueString()
+		lookup.emailProvided = lookup.email != ""
+	}
+
+	return lookup, true
+}
+
+func (d *userDataSource) fetchUser(ctx context.Context, lookup userLookupInput, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	if lookup.idProvided {
+		return d.fetchUserByID(ctx, lookup, resp)
+	}
+	return d.fetchUserByEmail(ctx, lookup.email, resp)
+}
+
+func (d *userDataSource) fetchUserByID(ctx context.Context, lookup userLookupInput, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	idValue, err := strconv.Atoi(lookup.id)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("User id was not a number %s", state.Id.ValueString()),
+			fmt.Sprintf("User id was not a number %s", lookup.id),
 			err.Error(),
 		)
-		return
+		return nil, false
 	}
 
-	user, api_response, err := d.client.UsersAPI.GetUser(ctx, int32(userId)).Execute()
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-		return
+	apiUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, int32(idValue)).Execute()
+	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return nil, false
 	}
 
-	// Map response body to model
-	state = userDataSourceModel{
-		Id:       types.StringValue(fmt.Sprintf("%v", user.Id)),
-		RootRole: types.Int64Value(int64(*user.RootRole)),
+	if lookup.emailProvided && !emailMatches(apiUser.Email, lookup.email) {
+		resp.Diagnostics.AddError(
+			"User id and email mismatch",
+			fmt.Sprintf("User %s has email %q, which does not match the requested email %q.", lookup.id, valueOrEmpty(apiUser.Email), lookup.email),
+		)
+		return nil, false
 	}
-	if user.Username.IsSet() {
+
+	return apiUser, true
+}
+
+func (d *userDataSource) fetchUserByEmail(ctx context.Context, email string, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
+	searchResult, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
+	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return nil, false
+	}
+
+	for i := range searchResult.Users {
+		candidate := searchResult.Users[i]
+		if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
+			detailedUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, candidate.Id).Execute()
+			if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+				return nil, false
+			}
+			return detailedUser, true
+		}
+	}
+
+	resp.Diagnostics.AddError(
+		"User not found",
+		fmt.Sprintf("No user matched the email %q.", email),
+	)
+	return nil, false
+}
+
+func buildUserState(user *unleash.UserSchema) userDataSourceModel {
+	state := userDataSourceModel{
+		Id: types.StringValue(strconv.Itoa(int(user.Id))),
+	}
+
+	if user.RootRole != nil {
+		state.RootRole = types.Int64Value(int64(*user.RootRole))
+	} else {
+		state.RootRole = types.Int64Null()
+	}
+
+	if user.Username.IsSet() && user.Username.Get() != nil {
 		state.Username = types.StringValue(*user.Username.Get())
 	} else {
 		state.Username = types.StringNull()
 	}
+
 	if user.Email != nil {
 		state.Email = types.StringValue(*user.Email)
 	} else {
 		state.Email = types.StringNull()
 	}
-	if user.Name.IsSet() {
+
+	if user.Name.IsSet() && user.Name.Get() != nil {
 		state.Name = types.StringValue(*user.Name.Get())
 	} else {
 		state.Name = types.StringNull()
 	}
 
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	tflog.Debug(ctx, "Finished reading user data source", map[string]any{"success": true})
+	return state
 }

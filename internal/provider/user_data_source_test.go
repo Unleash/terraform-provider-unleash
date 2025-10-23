@@ -26,6 +26,28 @@ func TestAccUserDataSource(t *testing.T) {
 					resource.TestCheckNoResourceAttr("data.unleash_user.admin_user", "email"),
 				),
 			},
+			{
+				Config: `
+					resource "unleash_user" "searchable" {
+						username   = "tf-acc-search-user"
+						email      = "tf-acc-search-user@getunleash.io"
+						name       = "Terraform Search User"
+						root_role  = 2
+						send_email = false
+					}
+
+					data "unleash_user" "search_by_email" {
+						email = unleash_user.searchable.email
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.unleash_user.search_by_email", "id"),
+					resource.TestCheckResourceAttr("data.unleash_user.search_by_email", "email", "tf-acc-search-user@getunleash.io"),
+					resource.TestCheckResourceAttr("data.unleash_user.search_by_email", "username", "tf-acc-search-user"),
+					resource.TestCheckResourceAttr("data.unleash_user.search_by_email", "root_role", "2"),
+					resource.TestCheckResourceAttr("data.unleash_user.search_by_email", "name", "Terraform Search User"),
+				),
+			},
 		},
 	})
 }

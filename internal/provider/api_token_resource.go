@@ -118,17 +118,19 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Generate API request body from plan
-	createAPITokenRequest := *unleash.NewCreateApiTokenSchemaOneOf2(plan.Type.ValueString(), plan.TokenName.ValueString())
+	createAPITokenRequest := unleash.NewCreateApiTokenSchema(plan.Type.ValueString(), plan.TokenName.ValueString())
 	if !plan.Environment.IsNull() && !plan.Environment.IsUnknown() {
-		createAPITokenRequest.Environment = plan.Environment.ValueStringPointer()
+		createAPITokenRequest.SetEnvironment(plan.Environment.ValueString())
 	}
 	project := plan.Project.ValueString()
 	if project != "" {
-		createAPITokenRequest.Project = &project
+		createAPITokenRequest.SetProject(project)
 	}
 	if !plan.Projects.IsNull() && !plan.Projects.IsUnknown() {
-		tflog.Debug(ctx, fmt.Sprintf("Iterating over projects: %+v to put them into %+v", plan.Projects, createAPITokenRequest.Projects))
-		plan.Projects.ElementsAs(ctx, &createAPITokenRequest.Projects, false)
+		var projects []string
+		plan.Projects.ElementsAs(ctx, &projects, false)
+		tflog.Debug(ctx, fmt.Sprintf("Iterating over projects: %+v", projects))
+		createAPITokenRequest.SetProjects(projects)
 	}
 	if !plan.ExpiresAt.IsNull() && !plan.ExpiresAt.IsUnknown() {
 		expire, err := time.Parse(time.RFC3339, plan.ExpiresAt.ValueString())
@@ -139,11 +141,10 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 			)
 			return
 		}
-		createAPITokenRequest.ExpiresAt = &expire
+		createAPITokenRequest.SetExpiresAt(expire)
 	}
-	createTokenRequest := unleash.CreateApiTokenSchemaOneOf2AsCreateApiTokenSchema(&createAPITokenRequest)
 
-	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(createTokenRequest).Execute()
+	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(*createAPITokenRequest).Execute()
 
 	if !ValidateApiResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
@@ -165,15 +166,15 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	} else {
 		newState.ExpiresAt = types.StringNull()
 	}
-	newState.Project = types.StringValue(token.Project)
-	if token.Projects == nil {
-		// replace with response
-		tflog.Debug(ctx, fmt.Sprintf("Token has projects: %+v but plan is %+v", token.Projects, plan.Projects))
+	if token.Project != nil {
+		newState.Project = types.StringValue(*token.Project)
 	} else {
-		if token.Projects != nil {
-			newState.Projects, _ = basetypes.NewSetValueFrom(ctx, types.StringType, token.Projects)
-		}
-		tflog.Debug(ctx, fmt.Sprintf("Projects not null: %+v", token.Projects))
+		newState.Project = types.StringNull()
+	}
+	if token.Projects != nil {
+		newState.Projects, _ = basetypes.NewSetValueFrom(ctx, types.StringType, token.Projects)
+	} else {
+		newState.Projects = types.SetNull(types.StringType)
 	}
 
 	// Set state
@@ -221,12 +222,22 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Update model with response
 	state.Secret = types.StringValue(token.Secret)
-	state.Environment = types.StringValue(*token.Environment)
+	if token.Environment != nil {
+		state.Environment = types.StringValue(*token.Environment)
+	} else {
+		state.Environment = types.StringNull()
+	}
 	state.TokenName = types.StringValue(token.TokenName)
 	state.Type = types.StringValue(token.Type)
-	state.Project = types.StringValue(token.Project)
+	if token.Project != nil {
+		state.Project = types.StringValue(*token.Project)
+	} else {
+		state.Project = types.StringNull()
+	}
 	if token.Projects != nil {
 		state.Projects, _ = basetypes.NewSetValueFrom(ctx, types.StringType, token.Projects)
+	} else {
+		state.Projects = types.SetNull(types.StringType)
 	}
 	if token.ExpiresAt.IsSet() && token.ExpiresAt.Get() != nil {
 		state.ExpiresAt = types.StringValue(token.ExpiresAt.Get().Format(time.RFC3339))

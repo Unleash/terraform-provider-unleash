@@ -132,7 +132,7 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 			Name: plannedPermission.Name.ValueString(),
 		}
 		if !plannedPermission.Environment.IsNull() && !plannedPermission.Environment.IsUnknown() {
-			permissionRef.SetEnvironment(*plannedPermission.Environment.ValueStringPointer())
+			permissionRef.SetEnvironment(plannedPermission.Environment.ValueString())
 		}
 		permissions = append(permissions, permissionRef)
 	}
@@ -167,8 +167,10 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 		permissionRef := permissionRef{
 			Name: types.StringValue(requestPermission.Name),
 		}
-		if requestPermission.Environment.IsSet() {
+		if requestPermission.Environment.IsSet() && requestPermission.Environment.Get() != nil {
 			permissionRef.Environment = types.StringValue(*requestPermission.Environment.Get())
+		} else {
+			permissionRef.Environment = types.StringNull()
 		}
 		newPermissions = append(newPermissions, permissionRef)
 	}
@@ -218,8 +220,10 @@ func (r *roleResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		permissionRef := permissionRef{
 			Name: types.StringValue(foundPermissions.Name),
 		}
-		if foundPermissions.Environment != nil {
-			permissionRef.Environment = types.StringValue(*foundPermissions.Environment)
+		if foundPermissions.Environment.IsSet() && foundPermissions.Environment.Get() != nil {
+			permissionRef.Environment = types.StringValue(*foundPermissions.Environment.Get())
+		} else {
+			permissionRef.Environment = types.StringNull()
 		}
 		permissions = append(permissions, permissionRef)
 	}
@@ -286,8 +290,10 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		permissionRef := permissionRef{
 			Name: types.StringValue(foundPermissions.Name),
 		}
-		if foundPermissions.Environment.IsSet() {
+		if foundPermissions.Environment.IsSet() && foundPermissions.Environment.Get() != nil {
 			permissionRef.Environment = types.StringValue(*foundPermissions.Environment.Get())
+		} else {
+			permissionRef.Environment = types.StringNull()
 		}
 		freshPermissions = append(freshPermissions, permissionRef)
 	}
