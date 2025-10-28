@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -69,4 +70,28 @@ func Test_provider_configValue(t *testing.T) {
 	assert.Equal(t, "bar", configValue(types.StringNull(), "BAR", "BAZ"))
 	assert.Equal(t, "baz", configValue(types.StringNull(), "QUX", "BAZ"))
 	assert.Equal(t, "bar", configValue(types.StringNull(), "QUX", "BAR", "BAZ"))
+}
+
+func Test_unleashClient_setsUnleashHeaders(t *testing.T) {
+	ctx := context.Background()
+	p := &UnleashProvider{version: "1.2.3"}
+	cfg := &UnleashConfiguration{
+		BaseUrl:       types.StringValue("http://example.com"),
+		Authorization: types.StringValue("secret"),
+	}
+
+	var diags diag.Diagnostics
+	client := unleashClient(ctx, p, cfg, &diags)
+
+	assert.False(t, diags.HasError())
+	if assert.NotNil(t, client) {
+		cfg := client.GetConfig()
+		headers := cfg.DefaultHeader
+
+		assert.Equal(t, "secret", headers["Authorization"])
+		assert.Equal(t, terraformProviderAppName(), headers[unleashAppNameHeader])
+		assert.Equal(t, terraformProviderSDKIdentifier(p.version), headers[unleashSDKHeader])
+		assert.NotContains(t, headers, "X-Unleash-InstanceId")
+		assert.Equal(t, UserAgent+"/"+p.version, cfg.UserAgent)
+	}
 }
