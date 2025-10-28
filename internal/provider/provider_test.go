@@ -90,7 +90,6 @@ func Test_unleashClient_setsUnleashHeaders(t *testing.T) {
 
 		assert.Equal(t, "secret", headers["Authorization"])
 		assert.Equal(t, terraformProviderAppName(), headers[unleashAppNameHeader])
-		assert.Equal(t, terraformProviderSDKIdentifier(p.version), headers[unleashSDKHeader])
 		assert.NotContains(t, headers, "X-Unleash-InstanceId")
 		assert.Equal(t, UserAgent+"/"+p.version, cfg.UserAgent)
 	}

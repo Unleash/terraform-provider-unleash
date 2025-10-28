@@ -37,7 +37,6 @@ type UnleashProvider struct {
 const (
 	UserAgent            = "Terraform-Provider-Unleash"
 	unleashAppNameHeader = "X-Unleash-AppName"
-	unleashSDKHeader     = "unleash-sdk"
 )
 
 // ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
@@ -73,7 +72,6 @@ func unleashClient(ctx context.Context, provider *UnleashProvider, config *Unlea
 	unleashConfig.AddDefaultHeader("Authorization", authorization)
 	appName := terraformProviderAppName()
 	unleashConfig.AddDefaultHeader(unleashAppNameHeader, appName)
-	unleashConfig.AddDefaultHeader(unleashSDKHeader, terraformProviderSDKIdentifier(provider.version))
 	unleashConfig.UserAgent = fmt.Sprintf("%s/%s", UserAgent, provider.version)
 
 	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
@@ -125,10 +123,6 @@ func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 
 func terraformProviderAppName() string {
 	return "terraform-provider-unleash"
-}
-
-func terraformProviderSDKIdentifier(version string) string {
-	return fmt.Sprintf("%s:%s", terraformProviderAppName(), version)
 }
 
 func checkIsSupportedVersion(version string, diags *diag.Diagnostics) {
