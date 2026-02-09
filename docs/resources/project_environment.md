@@ -37,7 +37,7 @@ resource "unleash_project_environment" "space_environment" {
 
 ### Required
 
-- `environment_name` (String) Environment identifier, equivalen	t to the environment name.
+- `environment_name` (String) Environment identifier, equivalent to the environment name.
 - `project_id` (String) Project identifier.
 
 ### Optional

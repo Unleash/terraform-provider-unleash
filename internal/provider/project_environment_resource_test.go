@@ -132,3 +132,66 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 		},
 	})
 }
+func TestAccProjectEnvironmentImport(t *testing.T) {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
+		t.Skip("Skipping enterprise tests")
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "unleash_project" "galaxy-wide-energy" {
+						id = "dysonsphere"
+						name = "dysonsphere"
+					}
+
+					resource "unleash_environment" "space" {
+						name = "outerspace"
+						type = "vacuum"
+					}
+
+					resource "unleash_project_environment" "approvals" {
+						project_id = unleash_project.galaxy-wide-energy.id
+						environment_name = unleash_environment.space.name
+						change_requests_enabled = true
+						required_approvals = 2
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "project_id", "dysonsphere"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "environment_name", "outerspace"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "true"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "required_approvals", "2"),
+				),
+			},
+			{
+				Config: `
+					resource "unleash_project" "galaxy-wide-energy" {
+						id = "dysonsphere"
+						name = "dysonsphere"
+					}
+
+					resource "unleash_environment" "space" {
+						name = "outerspace"
+						type = "vacuum"
+					}
+						
+					resource "unleash_project_environment" "approvals" {}
+				`,
+				ResourceName:      "unleash_project_environment.approvals",
+				ImportState:       true,
+				ImportStateId:     "dysonsphere:outerspace",
+				ImportStateVerify: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "project_id", "dysonsphere"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "environment_name", "outerspace"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "change_requests_enabled", "true"),
+					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "required_approvals", "2"),
+				),
+			},
+		},
+	})
+}
