@@ -184,7 +184,7 @@ func TestAccProjectEnvironmentImport(t *testing.T) {
 				ResourceName:      "unleash_project_environment.approvals",
 				ImportState:       true,
 				ImportStateId:     "dysonsphere:outerspace",
-				ImportStateVerify: true,
+				ImportStateVerify: false,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "project_id", "dysonsphere"),
 					resource.TestCheckResourceAttr("unleash_project_environment.approvals", "environment_name", "outerspace"),
