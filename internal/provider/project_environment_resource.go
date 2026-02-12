@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -86,7 +87,7 @@ func (r *projectEnvironmentResource) Schema(_ context.Context, _ resource.Schema
 				Required:    true,
 			},
 			"environment_name": schema.StringAttribute{
-				Description: "Environment identifier, equivalen	t to the environment name.",
+				Description: "Environment identifier, equivalent to the environment name.",
 				Required:    true,
 			},
 			"change_requests_enabled": schema.BoolAttribute{
@@ -107,9 +108,25 @@ func (r *projectEnvironmentResource) Schema(_ context.Context, _ resource.Schema
 }
 
 func (r *projectEnvironmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("projectId"), req, resp)
+	tflog.Debug(ctx, "Preparing to import project environment resource")
 
-	resource.ImportStatePassthroughID(ctx, path.Root("environmentId"), req, resp)
+	// The unique identifier for a project environment is: "<project_id>:<environment_name>"
+	parts := strings.Split(req.ID, ":")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			"Expected format '<project_id>:<environment_name>'. Example: 'default:development'",
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("project_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("environment_name"), parts[1])...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, "Finished importing project environment resource", map[string]any{"success": true})
 }
 
 func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
