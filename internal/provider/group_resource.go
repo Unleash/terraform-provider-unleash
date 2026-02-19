@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -31,7 +30,7 @@ type groupResource struct {
 }
 
 type groupResourceModel struct {
-	Id          types.String `tfsdk:"id"`
+	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	MappingsSSO types.List   `tfsdk:"mappings_sso"`
@@ -39,57 +38,30 @@ type groupResourceModel struct {
 	Users       types.List   `tfsdk:"users"`
 }
 
-type groupUserModel struct {
-	User groupUserRefModel `tfsdk:"user"`
-}
-
-type groupUserRefModel struct {
-	ID types.Int64 `tfsdk:"id"`
-}
-
-// Helper function to get the nested user object type definition.
-func getUserObjectType() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"user": types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"id": types.Int64Type,
-				},
-			},
-		},
-	}
-}
-
 // Helper function to convert API users to Terraform model.
-func convertAPIUsersToModel(apiUsers []unleash.GroupUserModelSchema) []groupUserModel {
-	var usersModel []groupUserModel
+func convertAPIUsersToModel(apiUsers []unleash.GroupUserModelSchema) []int64 {
+	var usersIDs []int64
 	for _, apiUser := range apiUsers {
 		if apiUser.User.Id != 0 {
-			userModel := groupUserModel{
-				User: groupUserRefModel{
-					ID: types.Int64Value(int64(apiUser.User.Id)),
-				},
-			}
-			usersModel = append(usersModel, userModel)
+			uID := int64(apiUser.User.Id)
+			usersIDs = append(usersIDs, uID)
 		}
 	}
-	return usersModel
+	return usersIDs
 }
 
 // Helper function to convert Terraform user models to API format.
 func convertModelUsersToAPI(ctx context.Context, usersList types.List, diagnostics *diag.Diagnostics) []unleash.CreateGroupSchemaUsersInner {
-	var usersModel []groupUserModel
-	diagnostics.Append(usersList.ElementsAs(ctx, &usersModel, false)...)
+	var usersIDs []int64
+	diagnostics.Append(usersList.ElementsAs(ctx, &usersIDs, false)...)
 	if diagnostics.HasError() {
 		return nil
 	}
-
 	var usersAPI []unleash.CreateGroupSchemaUsersInner
-	for _, userModel := range usersModel {
-		uID := int32(userModel.User.ID.ValueInt64())
+	for _, userID := range usersIDs {
 		userAPI := unleash.CreateGroupSchemaUsersInner{
 			User: unleash.CreateGroupSchemaUsersInnerUser{
-				Id: uID,
+				Id: int32(userID),
 			},
 		}
 		usersAPI = append(usersAPI, userAPI)
@@ -105,7 +77,7 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 		return
 	}
 	// ID
-	state.Id = types.StringValue(fmt.Sprint(*group.Id))
+	state.ID = types.StringValue(fmt.Sprint(*group.Id))
 
 	// Name
 	state.Name = types.StringValue(group.Name)
@@ -141,13 +113,13 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	})
 	// Users.
 	if len(group.Users) > 0 {
-		usersModel := convertAPIUsersToModel(group.Users)
+		usersIDs := convertAPIUsersToModel(group.Users)
 
-		usersList, diags := types.ListValueFrom(ctx, getUserObjectType(), usersModel)
+		usersList, diags := types.ListValueFrom(ctx, types.Int64Type, usersIDs)
 		diagnostics.Append(diags...)
 		state.Users = usersList
 	} else {
-		state.Users = types.ListNull(getUserObjectType())
+		state.Users = types.ListNull(types.Int64Type)
 	}
 }
 
@@ -195,21 +167,10 @@ func (r *groupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "The root role ID for this group.",
 				Optional:    true,
 			},
-			"users": schema.ListNestedAttribute{
-				Description: "A list of users who are members of this group.",
+			"users": schema.ListAttribute{
+				Description: "List of user IDs to add to this group",
 				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"user": schema.SingleNestedAttribute{
-							Required: true,
-							Attributes: map[string]schema.Attribute{
-								"id": schema.Int64Attribute{
-									Required: true,
-								},
-							},
-						},
-					},
-				},
+				ElementType: types.Int64Type,
 			},
 		},
 	}
@@ -264,7 +225,7 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	// Execute API call
-	// NOTE: Create does not return the user list as specified in the API spec, we need a read to obtain the users
+	// NOTE: Create does not return the user list as specified in the API spec, we need a Read to obtain the users
 	group, apiResponse, err := r.client.UsersAPI.CreateGroup(ctx).CreateGroupSchema(createGroupRequest).Execute()
 	if !ValidateApiResponse(apiResponse, 201, &resp.Diagnostics, err) {
 		return
@@ -272,7 +233,7 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	groupID := fmt.Sprint(*group.Id)
 	// Read to get the group
 	createdGroup, apiReadResponse, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
-	// Homemade error checking for read request in create
+	// Homemade error checking for Read request in create
 	if err != nil || apiReadResponse.StatusCode != 200 {
 		return
 	}
@@ -294,8 +255,8 @@ func (r *groupResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	}
 
 	// Get the group from the server
-	group, httpResp, err := r.client.UsersAPI.GetGroup(ctx, state.Id.ValueString()).Execute()
-	if !ValidateReadApiResponse(ctx, httpResp, err, resp, state.Id.ValueString(), "Group") {
+	group, httpResp, err := r.client.UsersAPI.GetGroup(ctx, state.ID.ValueString()).Execute()
+	if !ValidateReadApiResponse(ctx, httpResp, err, resp, state.ID.ValueString(), "Group") {
 		return
 	}
 
@@ -354,15 +315,15 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 
 	// Execute API call
-	group, apiResponse, err := r.client.UsersAPI.UpdateGroup(ctx, state.Id.ValueString()).CreateGroupSchema(updateGroupRequest).Execute()
+	group, apiResponse, err := r.client.UsersAPI.UpdateGroup(ctx, state.ID.ValueString()).CreateGroupSchema(updateGroupRequest).Execute()
 	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
 		return
 	}
 	groupID := fmt.Sprint(*group.Id)
 
-	// The Update request does not return the user list in the response body, so an additional get is needed to update the state
+	// NOTE: Update does not return the user list as specified in the API spec, we need a Read to obtain the users.
 	updatedGroup, httpResp, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
-	// Homemade error checking for read request in create
+	// Homemade error checking for Read request in Update
 	if err != nil || httpResp.StatusCode != 200 {
 		return
 	}
@@ -386,7 +347,7 @@ func (r *groupResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 	// Delete the group
-	httpResp, err := r.client.UsersAPI.DeleteGroup(ctx, state.Id.ValueString()).Execute()
+	httpResp, err := r.client.UsersAPI.DeleteGroup(ctx, state.ID.ValueString()).Execute()
 	if !ValidateApiResponse(httpResp, 200, &resp.Diagnostics, err) {
 		return
 	}
