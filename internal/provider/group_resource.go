@@ -83,7 +83,7 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	state.Name = types.StringValue(group.Name)
 
 	// Description
-	if group.Description.IsSet() {
+	if group.Description.IsSet() && group.Description.Get() != nil && *group.Description.Get() != "" {
 		state.Description = types.StringValue(*group.Description.Get())
 	} else {
 		state.Description = types.StringNull()
@@ -199,6 +199,8 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	// Optional: Description
 	if !plan.Description.IsNull() {
 		createGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
+	} else {
+		createGroupRequest.Description = *unleash.NewNullableString(nil)
 	}
 
 	// Optional: RootRole
@@ -214,6 +216,8 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 		if !resp.Diagnostics.HasError() {
 			createGroupRequest.MappingsSSO = mappings
 		}
+	} else {
+		createGroupRequest.MappingsSSO = []string{}
 	}
 
 	// Optional: Users
@@ -222,6 +226,8 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 		if !resp.Diagnostics.HasError() {
 			createGroupRequest.Users = usersAPI
 		}
+	} else {
+		createGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
 	}
 
 	// Execute API call
@@ -289,12 +295,16 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	// Optional: Description
 	if !plan.Description.IsNull() {
 		updateGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
+	} else {
+		updateGroupRequest.Description = *unleash.NewNullableString(nil)
 	}
 
 	// Optional: RootRole
 	if !plan.RootRole.IsNull() {
 		roleID := float32(plan.RootRole.ValueInt64())
 		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
+	} else {
+		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(nil)
 	}
 
 	// Optional: MappingsSSO
@@ -304,6 +314,8 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		if !resp.Diagnostics.HasError() {
 			updateGroupRequest.MappingsSSO = mappings
 		}
+	} else {
+		updateGroupRequest.MappingsSSO = []string{}
 	}
 
 	// Optional: Users
@@ -312,6 +324,8 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		if !resp.Diagnostics.HasError() {
 			updateGroupRequest.Users = usersAPI
 		}
+	} else {
+		updateGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
 	}
 
 	// Execute API call
