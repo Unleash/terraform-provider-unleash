@@ -128,33 +128,56 @@ func TestAccGroupResource(t *testing.T) {
 					customCheckGroupMappingSSOExists("unleash_group.test_group", "SSOGroup3"),
 				),
 			},
-			// Test 6: Create group with users (requires valid user IDs in your Unleash instance)
+			// Test 6: Create group with users
 			{
 				Config: `
+				resource "unleash_user" "group_user_1" {
+					username   = "tf-acc-group-user-1"
+					email      = "tf-acc-group-user-1@getunleash.io"
+					name       = "TF Acc Group User 1"
+					root_role  = 2
+					send_email = false
+				}
+
 				resource "unleash_group" "group_with_users" {
 					name        = "Group with Users"
 					description = "Testing user assignments"
-					users       = [123]
+					users       = [tonumber(unleash_user.group_user_1.id)]
 				}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "123"),
+					resource.TestCheckResourceAttr("unleash_group.group_with_users", "users.#", "1"),
 				),
 			},
 			// Test 7: Update users list
 			{
 				Config: `
+				resource "unleash_user" "group_user_1" {
+					username   = "tf-acc-group-user-1"
+					email      = "tf-acc-group-user-1@getunleash.io"
+					name       = "TF Acc Group User 1"
+					root_role  = 2
+					send_email = false
+				}
+
+				resource "unleash_user" "group_user_2" {
+					username   = "tf-acc-group-user-2"
+					email      = "tf-acc-group-user-2@getunleash.io"
+					name       = "TF Acc Group User 2"
+					root_role  = 2
+					send_email = false
+				}
+
 				resource "unleash_group" "group_with_users" {
 					name        = "Group with Users"
 					description = "Testing user assignments"
-					users       = [123,456]
+					users       = [tonumber(unleash_user.group_user_1.id), tonumber(unleash_user.group_user_2.id)]
 				}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "123"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "456"),
+					resource.TestCheckResourceAttr("unleash_group.group_with_users", "users.#", "2"),
 				),
 			},
 			// Test 8: Remove users
@@ -201,12 +224,20 @@ func TestAccGroupResource(t *testing.T) {
 			// Test 11: Create comprehensive group with all fields
 			{
 				Config: `
+				resource "unleash_user" "group_user_3" {
+					username   = "tf-acc-group-user-3"
+					email      = "tf-acc-group-user-3@getunleash.io"
+					name       = "TF Acc Group User 3"
+					root_role  = 2
+					send_email = false
+				}
+
 				resource "unleash_group" "comprehensive_group" {
 					name         = "Comprehensive Group"
 					description  = "Group with all fields populated"
 					root_role    = 1
 					mappings_sso = ["AdminGroup", "DevGroup"]
-					users        = [123]
+					users        = [tonumber(unleash_user.group_user_3.id)]
 				}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.comprehensive_group", "id"),
@@ -215,7 +246,7 @@ func TestAccGroupResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_group.comprehensive_group", "root_role", "1"),
 					customCheckGroupMappingSSOExists("unleash_group.comprehensive_group", "AdminGroup"),
 					customCheckGroupMappingSSOExists("unleash_group.comprehensive_group", "DevGroup"),
-					customCheckGroupUserExists("unleash_group.comprehensive_group", "123"),
+					resource.TestCheckResourceAttr("unleash_group.comprehensive_group", "users.#", "1"),
 				),
 			},
 			// Test 12: Import state
