@@ -233,8 +233,8 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	groupID := fmt.Sprint(*group.Id)
 	// Read to get the group
 	createdGroup, apiReadResponse, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
-	// Homemade error checking for Read request in create
-	if err != nil || apiReadResponse.StatusCode != 200 {
+	// Validate Read response in Create flow so failures surface diagnostics.
+	if !ValidateApiResponse(apiReadResponse, 200, &resp.Diagnostics, err) {
 		return
 	}
 	// Populate state from API response
@@ -322,9 +322,9 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	groupID := fmt.Sprint(*group.Id)
 
 	// NOTE: Update does not return the user list as specified in the API spec, we need a Read to obtain the users.
-	updatedGroup, httpResp, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
-	// Homemade error checking for Read request in Update
-	if err != nil || httpResp.StatusCode != 200 {
+	updatedGroup, apiReadResponse, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
+	// Validate Read response in Update flow so failures surface diagnostics.
+	if !ValidateApiResponse(apiReadResponse, 200, &resp.Diagnostics, err) {
 		return
 	}
 	// Populate the new state
