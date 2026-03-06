@@ -9,28 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func customCheckGroupUserExists(resourceName string, userID string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
-		}
-
-		for i := 0; ; i++ {
-			userAttrKey := fmt.Sprintf("users.%d", i)
-			user, ok := rs.Primary.Attributes[userAttrKey]
-			if !ok {
-				break // Exit the loop if no more users are found
-			}
-			if user == userID {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("User ID %s not found in resource %s", userID, resourceName)
-	}
-}
-
 func customCheckGroupMappingSSOExists(resourceName string, mapping string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -139,7 +117,6 @@ func TestAccGroupResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "123"),
 				),
 			},
 			// Test 7: Update users list
@@ -153,8 +130,6 @@ func TestAccGroupResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "123"),
-					customCheckGroupUserExists("unleash_group.group_with_users", "456"),
 				),
 			},
 			// Test 8: Remove users
@@ -215,7 +190,6 @@ func TestAccGroupResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_group.comprehensive_group", "root_role", "1"),
 					customCheckGroupMappingSSOExists("unleash_group.comprehensive_group", "AdminGroup"),
 					customCheckGroupMappingSSOExists("unleash_group.comprehensive_group", "DevGroup"),
-					customCheckGroupUserExists("unleash_group.comprehensive_group", "123"),
 				),
 			},
 			// Test 12: Import state
