@@ -9,28 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func customCheckGroupUserExists(resourceName string, userID string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
-		}
-
-		for i := 0; ; i++ {
-			userAttrKey := fmt.Sprintf("users.%d", i)
-			user, ok := rs.Primary.Attributes[userAttrKey]
-			if !ok {
-				break // Exit the loop if no more users are found
-			}
-			if user == userID {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("User ID %s not found in resource %s", userID, resourceName)
-	}
-}
-
 func customCheckGroupMappingSSOExists(resourceName string, mapping string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
