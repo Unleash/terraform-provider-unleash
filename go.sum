@@ -21,6 +21,8 @@ github.com/Unleash/unleash-server-api-go v0.5.4 h1:sq4TyDxCqAjrn0YJh34wvsEZd7eoQ
 github.com/Unleash/unleash-server-api-go v0.5.4/go.mod h1:/IvCtBfBrOVOa67elCLig45kt6NYkk79oxmRW80WOFY=
 github.com/Unleash/unleash-server-api-go v0.6.0 h1:P0YatGQKak6R2Jb89Of2UaRnbtD8euaTy9pfSRrnALQ=
 github.com/Unleash/unleash-server-api-go v0.6.0/go.mod h1:/IvCtBfBrOVOa67elCLig45kt6NYkk79oxmRW80WOFY=
+github.com/Unleash/unleash-server-api-go v0.7.1 h1:3Vvn+xgkWCZqsYp+152r9+QJtJ6V8fdHfX44jUuJ3iw=
+github.com/Unleash/unleash-server-api-go v0.7.1/go.mod h1:/IvCtBfBrOVOa67elCLig45kt6NYkk79oxmRW80WOFY=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
 github.com/agext/levenshtein v1.2.2/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apparentlymart/go-textseg/v12 v12.0.0/go.mod h1:S/4uRK2UtaQttw1GenVJEynmyUenKwP++x/+DdGV/Ec=
