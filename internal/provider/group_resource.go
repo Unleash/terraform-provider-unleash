@@ -167,7 +167,7 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	state.Name = types.StringValue(group.Name)
 
 	// Description
-	if group.Description.IsSet() && group.Description.Get() != nil {
+	if group.Description.IsSet() && group.Description.Get() != nil && *group.Description.Get() != "" {
 		state.Description = types.StringValue(*group.Description.Get())
 	} else {
 		state.Description = types.StringNull()

@@ -30,11 +30,8 @@ func TestPopulateGroupStateFromAPI_PreservesEmptyValues(t *testing.T) {
 	if diagnostics.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diagnostics)
 	}
-	if state.Description.IsNull() {
-		t.Fatalf("expected empty description to be preserved")
-	}
-	if got := state.Description.ValueString(); got != "" {
-		t.Fatalf("expected empty description, got %q", got)
+	if !state.Description.IsNull() {
+		t.Fatalf("expected empty description to normalize to null")
 	}
 	if !state.RootRole.IsNull() {
 		t.Fatalf("expected nil root role to map to null state")
