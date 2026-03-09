@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -105,26 +106,26 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 		state.RootRole = types.Int64Null()
 	}
 	// MappingsSSO.
-	if len(group.MappingsSSO) > 0 {
+	if len(group.MappingsSSO) > 0 && group.MappingsSSO != nil {
 		mappingSSO, diags := types.ListValueFrom(ctx, types.StringType, group.MappingsSSO)
 		diagnostics.Append(diags...)
 		state.MappingsSSO = mappingSSO
 	} else {
-		state.MappingsSSO = types.ListNull(types.StringType)
+		state.MappingsSSO = types.ListValueMust(types.StringType, []attr.Value{})
 	}
 	tflog.Debug(ctx, "populateGroupStateFromAPI: Processing users", map[string]any{
 		"users_nil": group.Users == nil,
 		"users_len": len(group.Users),
 	})
 	// Users.
-	if len(group.Users) > 0 {
+	if len(group.Users) > 0 && group.Users != nil {
 		usersIDs := convertAPIUsersToModel(group.Users)
 
 		usersList, diags := types.ListValueFrom(ctx, types.Int64Type, usersIDs)
 		diagnostics.Append(diags...)
 		state.Users = usersList
 	} else {
-		state.Users = types.ListNull(types.Int64Type)
+		state.Users = types.ListValueMust(types.StringType, []attr.Value{})
 	}
 }
 
