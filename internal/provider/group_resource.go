@@ -71,6 +71,82 @@ func convertModelUsersToAPI(ctx context.Context, usersList types.List, diagnosti
 	return usersAPI
 }
 
+func emptyStringList() types.List {
+	return types.ListValueMust(types.StringType, []attr.Value{})
+}
+
+func emptyInt64List() types.List {
+	return types.ListValueMust(types.Int64Type, []attr.Value{})
+}
+
+func stringListStateValue(ctx context.Context, current types.List, values []string, diagnostics *diag.Diagnostics) types.List {
+	if len(values) > 0 {
+		listValue, diags := types.ListValueFrom(ctx, types.StringType, values)
+		diagnostics.Append(diags...)
+		return listValue
+	}
+	if current.IsNull() {
+		return types.ListNull(types.StringType)
+	}
+	return emptyStringList()
+}
+
+func int64ListStateValue(ctx context.Context, current types.List, values []int64, diagnostics *diag.Diagnostics) types.List {
+	if len(values) > 0 {
+		listValue, diags := types.ListValueFrom(ctx, types.Int64Type, values)
+		diagnostics.Append(diags...)
+		return listValue
+	}
+	if current.IsNull() {
+		return types.ListNull(types.Int64Type)
+	}
+	return emptyInt64List()
+}
+
+func setGroupRequestFromPlan(ctx context.Context, request *unleash.CreateGroupSchema, plan groupResourceModel, diagnostics *diag.Diagnostics) {
+	request.Name = plan.Name.ValueString()
+
+	if !plan.Description.IsUnknown() {
+		if plan.Description.IsNull() {
+			request.Description = *unleash.NewNullableString(nil)
+		} else {
+			request.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
+		}
+	}
+
+	if !plan.RootRole.IsUnknown() {
+		if plan.RootRole.IsNull() {
+			request.RootRole = *unleash.NewNullableFloat32(nil)
+		} else {
+			roleID := float32(plan.RootRole.ValueInt64())
+			request.RootRole = *unleash.NewNullableFloat32(&roleID)
+		}
+	}
+
+	if !plan.MappingsSSO.IsUnknown() {
+		if plan.MappingsSSO.IsNull() {
+			request.MappingsSSO = []string{}
+		} else {
+			var mappings []string
+			diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
+			if !diagnostics.HasError() {
+				request.MappingsSSO = mappings
+			}
+		}
+	}
+
+	if !plan.Users.IsUnknown() {
+		if plan.Users.IsNull() {
+			request.Users = []unleash.CreateGroupSchemaUsersInner{}
+		} else {
+			usersAPI := convertModelUsersToAPI(ctx, plan.Users, diagnostics)
+			if !diagnostics.HasError() {
+				request.Users = usersAPI
+			}
+		}
+	}
+}
+
 // Helper function to populate group state from API response.
 func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, state *groupResourceModel, diagnostics *diag.Diagnostics) {
 	if group == nil {
@@ -91,7 +167,7 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	state.Name = types.StringValue(group.Name)
 
 	// Description
-	if group.Description.IsSet() && group.Description.Get() != nil && *group.Description.Get() != "" {
+	if group.Description.IsSet() && group.Description.Get() != nil {
 		state.Description = types.StringValue(*group.Description.Get())
 	} else {
 		state.Description = types.StringNull()
@@ -101,32 +177,18 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	if group.RootRole.IsSet() && group.RootRole.Get() != nil {
 		rolePtr := group.RootRole.Get()
 		state.RootRole = types.Int64Value(int64(*rolePtr))
-
 	} else {
 		state.RootRole = types.Int64Null()
 	}
-	// MappingsSSO.
-	if len(group.MappingsSSO) > 0 && group.MappingsSSO != nil {
-		mappingSSO, diags := types.ListValueFrom(ctx, types.StringType, group.MappingsSSO)
-		diagnostics.Append(diags...)
-		state.MappingsSSO = mappingSSO
-	} else {
-		state.MappingsSSO = types.ListValueMust(types.StringType, []attr.Value{})
-	}
+
+	state.MappingsSSO = stringListStateValue(ctx, state.MappingsSSO, group.MappingsSSO, diagnostics)
+
 	tflog.Debug(ctx, "populateGroupStateFromAPI: Processing users", map[string]any{
 		"users_nil": group.Users == nil,
 		"users_len": len(group.Users),
 	})
-	// Users.
-	if len(group.Users) > 0 && group.Users != nil {
-		usersIDs := convertAPIUsersToModel(group.Users)
 
-		usersList, diags := types.ListValueFrom(ctx, types.Int64Type, usersIDs)
-		diagnostics.Append(diags...)
-		state.Users = usersList
-	} else {
-		state.Users = types.ListValueMust(types.StringType, []attr.Value{})
-	}
+	state.Users = int64ListStateValue(ctx, state.Users, convertAPIUsersToModel(group.Users), diagnostics)
 }
 
 // Configure adds the provider configured client to the resource.
@@ -199,52 +261,7 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	// Build API request
 	createGroupRequest := *unleash.NewCreateGroupSchemaWithDefaults()
-	// Required: Name
-	createGroupRequest.Name = plan.Name.ValueString()
-
-	// Optional: Description
-	if !plan.Description.IsUnknown() {
-		if plan.Description.IsNull() {
-			createGroupRequest.Description = *unleash.NewNullableString(nil)
-		} else {
-			createGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
-		}
-	}
-
-	// Optional: Root role
-	if !plan.RootRole.IsUnknown() {
-		if plan.RootRole.IsNull() {
-			createGroupRequest.RootRole = *unleash.NewNullableFloat32(nil)
-		} else {
-			roleID := float32(plan.RootRole.ValueInt64())
-			createGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
-		}
-	}
-
-	// Optional: MappingsSSO
-	if !plan.MappingsSSO.IsUnknown() {
-		if plan.MappingsSSO.IsNull() {
-			createGroupRequest.MappingsSSO = []string{}
-		} else {
-			var mappings []string
-			resp.Diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
-			if !resp.Diagnostics.HasError() {
-				createGroupRequest.MappingsSSO = mappings
-			}
-		}
-	}
-
-	// Optional: Users
-	if !plan.Users.IsUnknown() {
-		if plan.Users.IsNull() {
-			createGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
-		} else {
-			usersAPI := convertModelUsersToAPI(ctx, plan.Users, &resp.Diagnostics)
-			if !resp.Diagnostics.HasError() {
-				createGroupRequest.Users = usersAPI
-			}
-		}
-	}
+	setGroupRequestFromPlan(ctx, &createGroupRequest, plan, &resp.Diagnostics)
 
 	// Execute API call
 	// NOTE: Create does not return the user list as specified in the API spec, we need a Read to obtain the users
@@ -315,44 +332,7 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 	// Build API request
 	updateGroupRequest := *unleash.NewCreateGroupSchemaWithDefaults() // API uses same schema for update
-
-	updateGroupRequest.Name = plan.Name.ValueString()
-
-	// Optional: Description
-	if !plan.Description.IsUnknown() {
-		if plan.Description.IsNull() {
-			updateGroupRequest.Description = *unleash.NewNullableString(nil)
-		} else {
-			updateGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
-		}
-	}
-
-	// Optional: RootRole
-	if !plan.RootRole.IsNull() && !plan.RootRole.IsUnknown() {
-		roleID := float32(plan.RootRole.ValueInt64())
-		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
-	} else if plan.RootRole.IsNull() {
-		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(nil)
-	}
-	// Optional: MappingsSSO
-	if !plan.MappingsSSO.IsNull() && !plan.MappingsSSO.IsUnknown() {
-		var mappings []string
-		resp.Diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
-		if !resp.Diagnostics.HasError() {
-			updateGroupRequest.MappingsSSO = mappings
-		}
-	} else if plan.MappingsSSO.IsNull() {
-		updateGroupRequest.MappingsSSO = []string{}
-	}
-	// Optional: Users
-	if !plan.Users.IsNull() && !plan.Users.IsUnknown() {
-		usersAPI := convertModelUsersToAPI(ctx, plan.Users, &resp.Diagnostics)
-		if !resp.Diagnostics.HasError() {
-			updateGroupRequest.Users = usersAPI
-		}
-	} else if plan.Users.IsNull() {
-		updateGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
-	}
+	setGroupRequestFromPlan(ctx, &updateGroupRequest, plan, &resp.Diagnostics)
 
 	// Execute API call
 	group, apiResponse, err := r.client.UsersAPI.UpdateGroup(ctx, state.ID.ValueString()).CreateGroupSchema(updateGroupRequest).Execute()
@@ -376,7 +356,7 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 	// Populate the new state
-	var newState groupResourceModel
+	newState := plan
 
 	// Populate state from API response
 	populateGroupStateFromAPI(ctx, updatedGroup, &newState, &resp.Diagnostics)
