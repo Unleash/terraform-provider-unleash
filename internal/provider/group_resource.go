@@ -77,7 +77,13 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 		diagnostics.AddError("Nil Group Response", "The API returned a nil group response")
 		return
 	}
-	// ID
+	// Check the ID
+	if group.Id == nil {
+		tflog.Error(ctx, "populateGroupStateFromAPI: group.Id is nil")
+		diagnostics.AddError("Nil Group ID Response", "The API returned a nil group id response")
+		return
+	}
+	// Set the ID
 	state.ID = types.StringValue(fmt.Sprint(*group.Id))
 
 	// Name
@@ -91,9 +97,10 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	}
 
 	// RootRole.
-	if group.RootRole.IsSet() {
+	if group.RootRole.IsSet() && group.RootRole.Get() != nil {
 		rolePtr := group.RootRole.Get()
 		state.RootRole = types.Int64Value(int64(*rolePtr))
+
 	} else {
 		state.RootRole = types.Int64Null()
 	}
@@ -195,37 +202,47 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	createGroupRequest.Name = plan.Name.ValueString()
 
 	// Optional: Description
-	if !plan.Description.IsNull() {
-		createGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
-	} else {
-		createGroupRequest.Description = *unleash.NewNullableString(nil)
+	if !plan.Description.IsUnknown() {
+		if plan.Description.IsNull() {
+			createGroupRequest.Description = *unleash.NewNullableString(nil)
+		} else {
+			createGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
+		}
 	}
 
-	// Optional: RootRole
-	if !plan.RootRole.IsNull() {
-		roleID := float32(plan.RootRole.ValueInt64())
-		createGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
+	// Optional: Root role
+	if !plan.RootRole.IsUnknown() {
+		if plan.RootRole.IsNull() {
+			createGroupRequest.RootRole = *unleash.NewNullableFloat32(nil)
+		} else {
+			roleID := float32(plan.RootRole.ValueInt64())
+			createGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
+		}
 	}
 
 	// Optional: MappingsSSO
-	if !plan.MappingsSSO.IsNull() && len(plan.MappingsSSO.Elements()) > 0 {
-		var mappings []string
-		resp.Diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
-		if !resp.Diagnostics.HasError() {
-			createGroupRequest.MappingsSSO = mappings
+	if !plan.MappingsSSO.IsUnknown() {
+		if plan.MappingsSSO.IsNull() {
+			createGroupRequest.MappingsSSO = []string{}
+		} else {
+			var mappings []string
+			resp.Diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
+			if !resp.Diagnostics.HasError() {
+				createGroupRequest.MappingsSSO = mappings
+			}
 		}
-	} else {
-		createGroupRequest.MappingsSSO = []string{}
 	}
 
 	// Optional: Users
-	if !plan.Users.IsNull() && len(plan.Users.Elements()) > 0 {
-		usersAPI := convertModelUsersToAPI(ctx, plan.Users, &resp.Diagnostics)
-		if !resp.Diagnostics.HasError() {
-			createGroupRequest.Users = usersAPI
+	if !plan.Users.IsUnknown() {
+		if plan.Users.IsNull() {
+			createGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
+		} else {
+			usersAPI := convertModelUsersToAPI(ctx, plan.Users, &resp.Diagnostics)
+			if !resp.Diagnostics.HasError() {
+				createGroupRequest.Users = usersAPI
+			}
 		}
-	} else {
-		createGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
 	}
 
 	// Execute API call
@@ -234,6 +251,15 @@ func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	if !ValidateApiResponse(apiResponse, 201, &resp.Diagnostics, err) {
 		return
 	}
+	if group == nil || group.Id == nil {
+		resp.Diagnostics.AddError(
+			"API Error: Missing Group ID",
+			"The Unleash API successfully created the group, but did not return a Group ID in the response. "+
+				"This prevents Terraform from tracking the resource.",
+		)
+		return
+	}
+
 	groupID := fmt.Sprint(*group.Id)
 	// Read to get the group
 	createdGroup, apiReadResponse, err := r.client.UsersAPI.GetGroup(ctx, groupID).Execute()
@@ -288,47 +314,56 @@ func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 	// Build API request
 	updateGroupRequest := *unleash.NewCreateGroupSchemaWithDefaults() // API uses same schema for update
+
 	updateGroupRequest.Name = plan.Name.ValueString()
 
 	// Optional: Description
-	if !plan.Description.IsNull() {
-		updateGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
-	} else {
-		updateGroupRequest.Description = *unleash.NewNullableString(nil)
+	if !plan.Description.IsUnknown() {
+		if plan.Description.IsNull() {
+			updateGroupRequest.Description = *unleash.NewNullableString(nil)
+		} else {
+			updateGroupRequest.Description = *unleash.NewNullableString(plan.Description.ValueStringPointer())
+		}
 	}
 
 	// Optional: RootRole
-	if !plan.RootRole.IsNull() {
+	if !plan.RootRole.IsNull() && !plan.RootRole.IsUnknown() {
 		roleID := float32(plan.RootRole.ValueInt64())
 		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(&roleID)
-	} else {
+	} else if plan.RootRole.IsNull() {
 		updateGroupRequest.RootRole = *unleash.NewNullableFloat32(nil)
 	}
-
 	// Optional: MappingsSSO
-	if !plan.MappingsSSO.IsNull() && len(plan.MappingsSSO.Elements()) > 0 {
+	if !plan.MappingsSSO.IsNull() && !plan.MappingsSSO.IsUnknown() {
 		var mappings []string
 		resp.Diagnostics.Append(plan.MappingsSSO.ElementsAs(ctx, &mappings, false)...)
 		if !resp.Diagnostics.HasError() {
 			updateGroupRequest.MappingsSSO = mappings
 		}
-	} else {
+	} else if plan.MappingsSSO.IsNull() {
 		updateGroupRequest.MappingsSSO = []string{}
 	}
-
 	// Optional: Users
-	if !plan.Users.IsNull() && len(plan.Users.Elements()) > 0 {
+	if !plan.Users.IsNull() && !plan.Users.IsUnknown() {
 		usersAPI := convertModelUsersToAPI(ctx, plan.Users, &resp.Diagnostics)
 		if !resp.Diagnostics.HasError() {
 			updateGroupRequest.Users = usersAPI
 		}
-	} else {
+	} else if plan.Users.IsNull() {
 		updateGroupRequest.Users = []unleash.CreateGroupSchemaUsersInner{}
 	}
 
 	// Execute API call
 	group, apiResponse, err := r.client.UsersAPI.UpdateGroup(ctx, state.ID.ValueString()).CreateGroupSchema(updateGroupRequest).Execute()
 	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return
+	}
+	if group == nil || group.Id == nil {
+		resp.Diagnostics.AddError(
+			"API Error: Missing Group ID",
+			"The Unleash API successfully updated the group, but did not return a Group ID in the response. "+
+				"This prevents Terraform from tracking the resource.",
+		)
 		return
 	}
 	groupID := fmt.Sprint(*group.Id)
