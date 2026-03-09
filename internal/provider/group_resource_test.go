@@ -155,6 +155,7 @@ func TestAccGroupResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
+					resource.TestCheckResourceAttr("unleash_group.group_with_users", "users.#", "2"),
 				),
 			},
 			// Test 8: Remove users
@@ -167,7 +168,7 @@ func TestAccGroupResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("unleash_group.group_with_users", "id"),
 					resource.TestCheckResourceAttr("unleash_group.group_with_users", "name", "Group with Users"),
-					resource.TestCheckResourceAttr("unleash_group.group_with_users", "users.#", "0"),
+					resource.TestCheckNoResourceAttr("unleash_group.group_with_users", "users"),
 				),
 			},
 			// Test 9: Create group with root role
@@ -294,7 +295,7 @@ func TestAccGroupResource_RemoveOptionalFields(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_group.optional_fields", "name", "Group with Optionals"),
 					// Check that optional fields are removed/null
 					resource.TestCheckNoResourceAttr("unleash_group.optional_fields", "description"),
-					resource.TestCheckResourceAttr("unleash_group.optional_fields", "mappings_sso.#", "0"),
+					resource.TestCheckNoResourceAttr("unleash_group.optional_fields", "mappings_sso"),
 				),
 			},
 		},

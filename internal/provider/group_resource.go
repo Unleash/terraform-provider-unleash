@@ -15,8 +15,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &groupResource{}
-	_ resource.ResourceWithConfigure = &groupResource{}
+	_ resource.Resource                = &groupResource{}
+	_ resource.ResourceWithConfigure   = &groupResource{}
+	_ resource.ResourceWithImportState = &groupResource{}
 )
 
 // NewGroupResource is a helper function to simplify the provider implementation.
@@ -92,13 +93,10 @@ func populateGroupStateFromAPI(ctx context.Context, group *unleash.GroupSchema, 
 	// RootRole.
 	if group.RootRole.IsSet() {
 		rolePtr := group.RootRole.Get()
-		if rolePtr != nil {
-			state.RootRole = types.Int64Value(int64(*rolePtr))
-		} else {
-			state.RootRole = types.Int64Null()
-		}
+		state.RootRole = types.Int64Value(int64(*rolePtr))
+	} else {
+		state.RootRole = types.Int64Null()
 	}
-
 	// MappingsSSO.
 	if len(group.MappingsSSO) > 0 {
 		mappingSSO, diags := types.ListValueFrom(ctx, types.StringType, group.MappingsSSO)
@@ -365,6 +363,6 @@ func (r *groupResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	if !ValidateApiResponse(httpResp, 200, &resp.Diagnostics, err) {
 		return
 	}
-
 	tflog.Debug(ctx, "Finished deleting group resource", map[string]any{"success": true})
+	resp.State.RemoveResource(ctx)
 }
