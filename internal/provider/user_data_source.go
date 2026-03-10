@@ -52,7 +52,6 @@ func (d *userDataSource) Configure(ctx context.Context, req datasource.Configure
 		return
 	}
 	d.client = client
-
 }
 
 // Metadata returns the data source type name.
@@ -203,13 +202,13 @@ func (d *userDataSource) fetchUserByID(ctx context.Context, lookup userLookupInp
 }
 
 func (d *userDataSource) fetchUserByEmail(ctx context.Context, email string, resp *datasource.ReadResponse) (*unleash.UserSchema, bool) {
-	searchResult, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
+	candidates, apiResponse, err := d.client.UsersAPI.SearchUsers(ctx).Q(email).Execute()
 	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
 		return nil, false
 	}
 
-	for i := range searchResult.Users {
-		candidate := searchResult.Users[i]
+	for i := range candidates {
+		candidate := candidates[i]
 		if candidate.Email != nil && strings.EqualFold(*candidate.Email, email) {
 			detailedUser, apiResponse, err := d.client.UsersAPI.GetUser(ctx, candidate.Id).Execute()
 			if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {

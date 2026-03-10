@@ -57,7 +57,6 @@ func (r *apiTokenResource) Configure(ctx context.Context, req resource.Configure
 		return
 	}
 	r.client = client
-
 }
 
 // Metadata returns the data source type name.
@@ -118,7 +117,7 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Generate API request body from plan
-	createAPITokenRequest := unleash.NewCreateApiTokenSchema(plan.Type.ValueString(), plan.TokenName.ValueString())
+	createAPITokenRequest := unleash.NewCreateApiTokenSchemaOneOf(plan.Type.ValueString(), plan.TokenName.ValueString())
 	if !plan.Environment.IsNull() && !plan.Environment.IsUnknown() {
 		createAPITokenRequest.SetEnvironment(plan.Environment.ValueString())
 	}
@@ -144,8 +143,8 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 		createAPITokenRequest.SetExpiresAt(expire)
 	}
 
-	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(*createAPITokenRequest).Execute()
-
+	createAPITokenSchema := unleash.CreateApiTokenSchemaOneOfAsCreateApiTokenSchema(createAPITokenRequest)
+	token, api_response, err := r.client.APITokensAPI.CreateApiToken(ctx).CreateApiTokenSchema(createAPITokenSchema).Execute()
 	if !ValidateApiResponse(api_response, 201, &resp.Diagnostics, err) {
 		return
 	}
