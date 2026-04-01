@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -145,14 +146,10 @@ func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, plan.ProjectId.ValueString()).Execute()
-
-	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
-		tflog.Warn(ctx, fmt.Sprintf("Failed to get project change request config for project %s", plan.ProjectId.ValueString()))
+	if !r.hydrateState(ctx, &plan, &resp.Diagnostics) {
+		tflog.Warn(ctx, fmt.Sprintf("Failed to hydrate project environment state for project %s", plan.ProjectId.ValueString()))
 		return
 	}
-
-	plan.hydrateResponseFromApi(config)
 
 	resp.State.Set(ctx, plan)
 
@@ -172,23 +169,35 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 	projectId := state.ProjectId.ValueString()
 	envName := state.EnvironmentName.ValueString()
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, projectId).Execute()
+	environments, getEnvironmentsResponse, getEnvironmentsErr := r.client.EnvironmentsAPI.GetProjectEnvironments(ctx, projectId).Execute()
 
-	if !ValidateReadApiResponse(ctx, getResponse, getErr, resp, projectId, "Project") {
+	if !ValidateReadApiResponse(ctx, getEnvironmentsResponse, getEnvironmentsErr, resp, projectId, "Project") {
 		return
 	}
 
-	var envChangeRequestConfig *unleash.ChangeRequestEnvironmentConfigSchema
-	for i := range config {
-		if config[i].Environment == envName {
-			envChangeRequestConfig = &config[i]
+	enabled := false
+	for i := range environments.Environments {
+		if environments.Environments[i].Name == envName {
+			enabled = true
 			break
 		}
 	}
 
-	if envChangeRequestConfig == nil {
+	if !enabled {
 		tflog.Warn(ctx, fmt.Sprintf("Environment %s not found in project %s, removing from state", envName, projectId))
 		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, projectId).Execute()
+	if isNotFoundResponse(getResponse) {
+		tflog.Debug(ctx, "Change request configuration endpoint is not available for this project environment")
+		state.resetChangeRequestConfig()
+		resp.State.Set(ctx, state)
+		return
+	}
+
+	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return
 	}
 
@@ -213,13 +222,9 @@ func (r *projectEnvironmentResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, plan.ProjectId.ValueString()).Execute()
-
-	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
+	if !r.hydrateState(ctx, &plan, &resp.Diagnostics) {
 		return
 	}
-
-	plan.hydrateResponseFromApi(config)
 
 	resp.State.Set(ctx, plan)
 
@@ -236,14 +241,16 @@ func (r *projectEnvironmentResource) Delete(ctx context.Context, req resource.De
 		return
 	}
 
-	disableChangeRequest := *unleash.NewUpdateChangeRequestEnvironmentConfigSchemaWithDefaults()
-	disableChangeRequest.ChangeRequestsEnabled = false
-	disableChangeRequest.SetRequiredApprovals(0)
+	if shouldManageChangeRequests(state.ChangeRequestsEnabled, state.RequiredApprovals) {
+		disableChangeRequest := *unleash.NewUpdateChangeRequestEnvironmentConfigSchemaWithDefaults()
+		disableChangeRequest.ChangeRequestsEnabled = false
+		disableChangeRequest.SetRequiredApprovals(0)
 
-	updateResponse, updateErr := r.client.ChangeRequestsAPI.UpdateProjectChangeRequestConfig(ctx, state.ProjectId.ValueString(), state.EnvironmentName.ValueString()).UpdateChangeRequestEnvironmentConfigSchema(disableChangeRequest).Execute()
+		updateResponse, updateErr := r.client.ChangeRequestsAPI.UpdateProjectChangeRequestConfig(ctx, state.ProjectId.ValueString(), state.EnvironmentName.ValueString()).UpdateChangeRequestEnvironmentConfigSchema(disableChangeRequest).Execute()
 
-	if !ValidateApiResponse(updateResponse, 204, &resp.Diagnostics, updateErr) {
-		return
+		if !isNotFoundResponse(updateResponse) && !ValidateApiResponse(updateResponse, 204, &resp.Diagnostics, updateErr) {
+			return
+		}
 	}
 
 	deleteResponse, err := r.client.ProjectsAPI.RemoveEnvironmentFromProject(ctx, state.ProjectId.ValueString(), state.EnvironmentName.ValueString()).Execute()
@@ -270,6 +277,10 @@ func (r *projectEnvironmentResource) configureProjectEnvironment(ctx context.Con
 		return false
 	}
 
+	if !hasConfiguredChangeRequestSettings(plan.ChangeRequestsEnabled, plan.RequiredApprovals) {
+		return true
+	}
+
 	enableChangeRequest := *unleash.NewUpdateChangeRequestEnvironmentConfigSchemaWithDefaults()
 	enableChangeRequest.SetChangeRequestsEnabled(plan.ChangeRequestsEnabled.ValueBool())
 	if !plan.RequiredApprovals.IsNull() && plan.RequiredApprovals.ValueInt64Pointer() != nil {
@@ -285,6 +296,38 @@ func (r *projectEnvironmentResource) configureProjectEnvironment(ctx context.Con
 	}
 	tflog.Debug(ctx, fmt.Sprintf("Successfully configured project environment %s for project %s with change requests enabled %t", plan.EnvironmentName.ValueString(), plan.ProjectId.ValueString(), plan.ChangeRequestsEnabled.ValueBool()))
 	return true
+}
+
+func (r *projectEnvironmentResource) hydrateState(ctx context.Context, state *projectEnvironmentResourceModel, diagnostics *diag.Diagnostics) bool {
+	environments, getEnvironmentsResponse, getEnvironmentsErr := r.client.EnvironmentsAPI.GetProjectEnvironments(ctx, state.ProjectId.ValueString()).Execute()
+	if !ValidateApiResponse(getEnvironmentsResponse, 200, diagnostics, getEnvironmentsErr) {
+		return false
+	}
+
+	for _, environment := range environments.Environments {
+		if environment.Name != state.EnvironmentName.ValueString() {
+			continue
+		}
+
+		config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
+		if isNotFoundResponse(getResponse) {
+			state.resetChangeRequestConfig()
+			return true
+		}
+
+		if !ValidateApiResponse(getResponse, 200, diagnostics, getErr) {
+			return false
+		}
+
+		state.hydrateResponseFromApi(config)
+		return true
+	}
+
+	diagnostics.AddError(
+		"Environment not found in project",
+		fmt.Sprintf("Environment %s is not enabled for project %s", state.EnvironmentName.ValueString(), state.ProjectId.ValueString()),
+	)
+	return false
 }
 
 func (m *projectEnvironmentResourceModel) hydrateResponseFromApi(config []unleash.ChangeRequestEnvironmentConfigSchema) {
@@ -315,4 +358,23 @@ func (m *projectEnvironmentResourceModel) hydrateResponseFromApi(config []unleas
 	m.EnvironmentName = types.StringValue(m.EnvironmentName.ValueString())
 	m.ChangeRequestsEnabled = types.BoolValue(envChangeRequestConfig.ChangeRequestEnabled)
 	m.RequiredApprovals = requiredApprovals
+}
+
+func (m *projectEnvironmentResourceModel) resetChangeRequestConfig() {
+	m.ProjectId = types.StringValue(m.ProjectId.ValueString())
+	m.EnvironmentName = types.StringValue(m.EnvironmentName.ValueString())
+	m.ChangeRequestsEnabled = types.BoolValue(false)
+	m.RequiredApprovals = types.Int64Null()
+}
+
+func shouldManageChangeRequests(changeRequestsEnabled types.Bool, requiredApprovals types.Int64) bool {
+	return (!changeRequestsEnabled.IsNull() && !changeRequestsEnabled.IsUnknown()) || (!requiredApprovals.IsNull() && !requiredApprovals.IsUnknown())
+}
+
+func hasConfiguredChangeRequestSettings(changeRequestsEnabled types.Bool, requiredApprovals types.Int64) bool {
+	return shouldManageChangeRequests(changeRequestsEnabled, requiredApprovals)
+}
+
+func isNotFoundResponse(response *http.Response) bool {
+	return response != nil && response.StatusCode == http.StatusNotFound
 }
