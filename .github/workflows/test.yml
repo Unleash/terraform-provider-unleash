@@ -54,7 +54,7 @@ jobs:
 
   # Run acceptance tests in a matrix with Terraform CLI versions
   test:
-    name: Terraform Provider Acceptance Tests (${{ matrix.terraform }}, ${{ matrix.docker-image }}${{ matrix.unleash-plan && format(', plan={0}', matrix.unleash-plan) || '' }})
+    name: Acc Tests (TF ${{ matrix.terraform }}, ${{ contains(matrix.docker-image, 'unleash-enterprise') && 'enterprise' || 'oss' }}, Unleash ${{ endsWith(matrix.docker-image, ':latest') && 'latest' || endsWith(matrix.docker-image, ':6') && '6' || '5' }}${{ matrix.unleash-plan && format(', plan={0}', matrix.unleash-plan) || '' }})
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
