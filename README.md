@@ -34,7 +34,7 @@ go install
 
 https://developer.hashicorp.com/terraform/plugin/testing
 
-**Note**: some tests rely on an enterprise version of Unleash. To run those tests locally you need to set the environment variable `UNLEASH_ENTERPRISE=true`. To run docker with an enterprise image: `UNLEASH_DOCKER_IMAGE=unleashorg/unleash-enterprise:latest docker compose up` (you will also need a valid license key that you can provide at startup with `UNLEASH_DEV_LICENSE=<your license key>`).
+**Note**: some tests rely on enterprise-compatible features in Unleash. To run those tests locally you need to set `UNLEASH_ENTERPRISE=true`. By default those tests assume the enterprise plan; to run the same suite against the Pro plan, also set `UNLEASH_PLAN=pro`. To run docker with an enterprise image: `UNLEASH_DOCKER_IMAGE=unleashorg/unleash-enterprise:latest docker compose up` (you will also need a valid license key that you can provide at startup with `UNLEASH_DEV_LICENSE=<your license key>`).
 
 Run tests (most likely we will not have a lot of unit tests but instead we'll have acceptance tests)
 
@@ -48,10 +48,16 @@ Run **acceptance tests** which cover the provider and resources code
 TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
 
-To run enterprise tests (you have to make sure you're running an enterprise server)
+To run enterprise-compatible tests (you have to make sure you're running an enterprise server)
 
 ```shell
 UNLEASH_ENTERPRISE=true TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
+```
+
+To run the same enterprise-compatible tests against the Pro plan
+
+```shell
+UNLEASH_ENTERPRISE=true UNLEASH_PLAN=pro TF_LOG=debug TF_ACC=1 go test ./... -v -count=1
 ```
 
 or the following make target (although it will cache results if nothing changes)

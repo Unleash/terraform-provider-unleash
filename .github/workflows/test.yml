@@ -54,7 +54,7 @@ jobs:
 
   # Run acceptance tests in a matrix with Terraform CLI versions
   test:
-    name: Terraform Provider Acceptance Tests
+    name: Terraform Provider Acceptance Tests (${{ matrix.terraform }}, ${{ matrix.docker-image }}${{ matrix.unleash-plan && format(', plan={0}', matrix.unleash-plan) || '' }})
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -74,6 +74,12 @@ jobs:
           - "unleashorg/unleash-server:6"
           - "unleashorg/unleash-enterprise:latest"
           - "unleashorg/unleash-server:latest"
+        unleash-plan:
+          - ""
+        include:
+          - terraform: "1.4.*"
+            docker-image: "unleashorg/unleash-enterprise:latest"
+            unleash-plan: "pro"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
@@ -98,4 +104,5 @@ jobs:
           TF_ACC: "1"
           #TF_LOG: "debug"
           UNLEASH_ENTERPRISE: "${{ contains(matrix.docker-image, 'unleash-enterprise') }}"
+          UNLEASH_PLAN: ${{ matrix.unleash-plan }}
         timeout-minutes: 3

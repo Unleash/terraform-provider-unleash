@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
@@ -9,9 +8,7 @@ import (
 )
 
 func TestAccProjectChangeRequestResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -133,9 +130,7 @@ func TestAccProjectChangeRequestResource(t *testing.T) {
 	})
 }
 func TestAccProjectEnvironmentImport(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
