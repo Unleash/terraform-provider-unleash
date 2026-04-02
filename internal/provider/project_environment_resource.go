@@ -192,7 +192,7 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, projectId).Execute()
 	if isNotFoundResponse(getResponse) {
 		tflog.Debug(ctx, "Change request configuration endpoint is not available for this project environment")
-		state.resetChangeRequestConfig()
+		state.syncChangeRequestConfigNotFound()
 		resp.State.Set(ctx, state)
 		return
 	}
@@ -201,7 +201,7 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	state.hydrateResponseFromApi(config)
+	state.syncChangeRequestConfigFromApi(config)
 
 	resp.State.Set(ctx, state)
 
@@ -311,7 +311,7 @@ func (r *projectEnvironmentResource) hydrateState(ctx context.Context, state *pr
 
 		config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
 		if isNotFoundResponse(getResponse) {
-			state.resetChangeRequestConfig()
+			state.syncChangeRequestConfigNotFound()
 			return true
 		}
 
@@ -319,7 +319,7 @@ func (r *projectEnvironmentResource) hydrateState(ctx context.Context, state *pr
 			return false
 		}
 
-		state.hydrateResponseFromApi(config)
+		state.syncChangeRequestConfigFromApi(config)
 		return true
 	}
 
@@ -358,6 +358,22 @@ func (m *projectEnvironmentResourceModel) hydrateResponseFromApi(config []unleas
 	m.EnvironmentName = types.StringValue(m.EnvironmentName.ValueString())
 	m.ChangeRequestsEnabled = types.BoolValue(envChangeRequestConfig.ChangeRequestEnabled)
 	m.RequiredApprovals = requiredApprovals
+}
+
+func (m *projectEnvironmentResourceModel) syncChangeRequestConfigFromApi(config []unleash.ChangeRequestEnvironmentConfigSchema) {
+	if !shouldManageChangeRequests(m.ChangeRequestsEnabled, m.RequiredApprovals) {
+		return
+	}
+
+	m.hydrateResponseFromApi(config)
+}
+
+func (m *projectEnvironmentResourceModel) syncChangeRequestConfigNotFound() {
+	if !shouldManageChangeRequests(m.ChangeRequestsEnabled, m.RequiredApprovals) {
+		return
+	}
+
+	m.resetChangeRequestConfig()
 }
 
 func (m *projectEnvironmentResourceModel) resetChangeRequestConfig() {
