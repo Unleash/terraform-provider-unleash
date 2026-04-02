@@ -3,6 +3,7 @@ package provider
 import (
 	"testing"
 
+	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -76,5 +77,48 @@ func TestResetChangeRequestConfig(t *testing.T) {
 	}
 	if !model.RequiredApprovals.IsNull() {
 		t.Fatal("expected required approvals to be null")
+	}
+}
+
+func TestSyncChangeRequestConfigFromApiPreservesUnmanagedState(t *testing.T) {
+	model := projectEnvironmentResourceModel{
+		ProjectId:             types.StringValue("project"),
+		EnvironmentName:       types.StringValue("development"),
+		ChangeRequestsEnabled: types.BoolNull(),
+		RequiredApprovals:     types.Int64Null(),
+	}
+	requiredApprovals := float32(2)
+
+	model.syncChangeRequestConfigFromApi([]unleash.ChangeRequestEnvironmentConfigSchema{
+		{
+			Environment:          "development",
+			ChangeRequestEnabled: true,
+			RequiredApprovals:    *unleash.NewNullableFloat32(&requiredApprovals),
+		},
+	})
+
+	if !model.ChangeRequestsEnabled.IsNull() {
+		t.Fatal("expected change requests enabled to remain null for unmanaged state")
+	}
+	if !model.RequiredApprovals.IsNull() {
+		t.Fatal("expected required approvals to remain null for unmanaged state")
+	}
+}
+
+func TestSyncChangeRequestConfigNotFoundPreservesUnmanagedState(t *testing.T) {
+	model := projectEnvironmentResourceModel{
+		ProjectId:             types.StringValue("project"),
+		EnvironmentName:       types.StringValue("development"),
+		ChangeRequestsEnabled: types.BoolNull(),
+		RequiredApprovals:     types.Int64Null(),
+	}
+
+	model.syncChangeRequestConfigNotFound()
+
+	if !model.ChangeRequestsEnabled.IsNull() {
+		t.Fatal("expected change requests enabled to remain null for unmanaged state")
+	}
+	if !model.RequiredApprovals.IsNull() {
+		t.Fatal("expected required approvals to remain null for unmanaged state")
 	}
 }
