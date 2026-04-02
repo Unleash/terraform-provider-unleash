@@ -277,7 +277,7 @@ func (r *projectEnvironmentResource) configureProjectEnvironment(ctx context.Con
 		return false
 	}
 
-	if !hasConfiguredChangeRequestSettings(plan.ChangeRequestsEnabled, plan.RequiredApprovals) {
+	if !shouldManageChangeRequests(plan.ChangeRequestsEnabled, plan.RequiredApprovals) {
 		return true
 	}
 
@@ -361,18 +361,12 @@ func (m *projectEnvironmentResourceModel) hydrateResponseFromApi(config []unleas
 }
 
 func (m *projectEnvironmentResourceModel) resetChangeRequestConfig() {
-	m.ProjectId = types.StringValue(m.ProjectId.ValueString())
-	m.EnvironmentName = types.StringValue(m.EnvironmentName.ValueString())
 	m.ChangeRequestsEnabled = types.BoolValue(false)
 	m.RequiredApprovals = types.Int64Null()
 }
 
 func shouldManageChangeRequests(changeRequestsEnabled types.Bool, requiredApprovals types.Int64) bool {
 	return (!changeRequestsEnabled.IsNull() && !changeRequestsEnabled.IsUnknown()) || (!requiredApprovals.IsNull() && !requiredApprovals.IsUnknown())
-}
-
-func hasConfiguredChangeRequestSettings(changeRequestsEnabled types.Bool, requiredApprovals types.Int64) bool {
-	return shouldManageChangeRequests(changeRequestsEnabled, requiredApprovals)
 }
 
 func isNotFoundResponse(response *http.Response) bool {
