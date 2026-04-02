@@ -151,7 +151,11 @@ func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	resp.State.Set(ctx, plan)
+	plan.normalizeUnmanagedChangeRequestConfig()
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	tflog.Debug(ctx, "Finished setting project environment", map[string]interface{}{"success": true})
 }
@@ -189,11 +193,17 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
+	if !shouldManageChangeRequests(state.ChangeRequestsEnabled, state.RequiredApprovals) {
+		state.normalizeUnmanagedChangeRequestConfig()
+		resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+		return
+	}
+
 	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, projectId).Execute()
 	if isNotFoundResponse(getResponse) {
 		tflog.Debug(ctx, "Change request configuration endpoint is not available for this project environment")
 		state.syncChangeRequestConfigNotFound()
-		resp.State.Set(ctx, state)
+		resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 		return
 	}
 
@@ -203,7 +213,10 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 
 	state.syncChangeRequestConfigFromApi(config)
 
-	resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	tflog.Debug(ctx, "Finished reading project environment change request", map[string]interface{}{"success": true})
 }
@@ -226,7 +239,11 @@ func (r *projectEnvironmentResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	resp.State.Set(ctx, plan)
+	plan.normalizeUnmanagedChangeRequestConfig()
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	tflog.Debug(ctx, "Finished updating project environment change request", map[string]interface{}{"success": true})
 }
@@ -309,6 +326,11 @@ func (r *projectEnvironmentResource) hydrateState(ctx context.Context, state *pr
 			continue
 		}
 
+		if !shouldManageChangeRequests(state.ChangeRequestsEnabled, state.RequiredApprovals) {
+			state.normalizeUnmanagedChangeRequestConfig()
+			return true
+		}
+
 		config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
 		if isNotFoundResponse(getResponse) {
 			state.syncChangeRequestConfigNotFound()
@@ -379,6 +401,19 @@ func (m *projectEnvironmentResourceModel) syncChangeRequestConfigNotFound() {
 func (m *projectEnvironmentResourceModel) resetChangeRequestConfig() {
 	m.ChangeRequestsEnabled = types.BoolValue(false)
 	m.RequiredApprovals = types.Int64Null()
+}
+
+func (m *projectEnvironmentResourceModel) normalizeUnmanagedChangeRequestConfig() {
+	if shouldManageChangeRequests(m.ChangeRequestsEnabled, m.RequiredApprovals) {
+		return
+	}
+
+	if m.ChangeRequestsEnabled.IsUnknown() {
+		m.ChangeRequestsEnabled = types.BoolNull()
+	}
+	if m.RequiredApprovals.IsUnknown() {
+		m.RequiredApprovals = types.Int64Null()
+	}
 }
 
 func shouldManageChangeRequests(changeRequestsEnabled types.Bool, requiredApprovals types.Int64) bool {

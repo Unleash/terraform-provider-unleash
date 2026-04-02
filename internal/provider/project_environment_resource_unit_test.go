@@ -122,3 +122,39 @@ func TestSyncChangeRequestConfigNotFoundPreservesUnmanagedState(t *testing.T) {
 		t.Fatal("expected required approvals to remain null for unmanaged state")
 	}
 }
+
+func TestNormalizeUnmanagedChangeRequestConfig(t *testing.T) {
+	model := projectEnvironmentResourceModel{
+		ProjectId:             types.StringValue("project"),
+		EnvironmentName:       types.StringValue("development"),
+		ChangeRequestsEnabled: types.BoolUnknown(),
+		RequiredApprovals:     types.Int64Unknown(),
+	}
+
+	model.normalizeUnmanagedChangeRequestConfig()
+
+	if !model.ChangeRequestsEnabled.IsNull() {
+		t.Fatal("expected change requests enabled to normalize to null for unmanaged state")
+	}
+	if !model.RequiredApprovals.IsNull() {
+		t.Fatal("expected required approvals to normalize to null for unmanaged state")
+	}
+}
+
+func TestNormalizeUnmanagedChangeRequestConfigPreservesManagedState(t *testing.T) {
+	model := projectEnvironmentResourceModel{
+		ProjectId:             types.StringValue("project"),
+		EnvironmentName:       types.StringValue("development"),
+		ChangeRequestsEnabled: types.BoolValue(false),
+		RequiredApprovals:     types.Int64Null(),
+	}
+
+	model.normalizeUnmanagedChangeRequestConfig()
+
+	if model.ChangeRequestsEnabled.IsNull() {
+		t.Fatal("expected managed change requests enabled to be preserved")
+	}
+	if model.ChangeRequestsEnabled.ValueBool() {
+		t.Fatal("expected explicit false value to be preserved")
+	}
+}
