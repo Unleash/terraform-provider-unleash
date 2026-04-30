@@ -72,6 +72,32 @@ func Test_provider_configValue(t *testing.T) {
 	assert.Equal(t, "bar", configValue(types.StringNull(), "QUX", "BAR", "BAZ"))
 }
 
+func Test_provider_maxConcurrentRequests(t *testing.T) {
+	var diags diag.Diagnostics
+
+	assert.Equal(t, int64(2), maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.False(t, diags.HasError())
+
+	assert.Equal(t, int64(4), maxConcurrentRequests(types.Int64Value(4), &diags))
+	assert.False(t, diags.HasError())
+}
+
+func Test_provider_maxConcurrentRequests_env(t *testing.T) {
+	t.Setenv("UNLEASH_MAX_CONCURRENT_REQUESTS", "3")
+
+	var diags diag.Diagnostics
+
+	assert.Equal(t, int64(3), maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.False(t, diags.HasError())
+}
+
+func Test_provider_maxConcurrentRequests_rejectsInvalidValues(t *testing.T) {
+	var diags diag.Diagnostics
+
+	assert.Equal(t, int64(2), maxConcurrentRequests(types.Int64Value(0), &diags))
+	assert.True(t, diags.HasError())
+}
+
 func Test_unleashClient_setsUnleashHeaders(t *testing.T) {
 	ctx := context.Background()
 	p := &UnleashProvider{version: "1.2.3"}

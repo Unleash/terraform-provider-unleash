@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -41,8 +42,9 @@ const (
 
 // ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
 type UnleashConfiguration struct {
-	BaseUrl       types.String `tfsdk:"base_url"`
-	Authorization types.String `tfsdk:"authorization"`
+	BaseUrl               types.String `tfsdk:"base_url"`
+	Authorization         types.String `tfsdk:"authorization"`
+	MaxConcurrentRequests types.Int64  `tfsdk:"max_concurrent_requests"`
 }
 
 func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -55,6 +57,7 @@ func unleashClient(ctx context.Context, provider *UnleashProvider, config *Unlea
 	authorization := configValue(config.Authorization, "AUTH_TOKEN", "UNLEASH_AUTH_TOKEN")
 	mustHave("base_url", base_url, diagnostics)
 	mustHave("authorization", authorization, diagnostics)
+	maxRequests := maxConcurrentRequests(config.MaxConcurrentRequests, diagnostics)
 
 	if diagnostics.HasError() {
 		return nil
@@ -76,7 +79,7 @@ func unleashClient(ctx context.Context, provider *UnleashProvider, config *Unlea
 
 	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
 	isDebug := logLevel == "debug" || logLevel == "trace"
-	unleashConfig.HTTPClient = httpClient(isDebug)
+	unleashConfig.HTTPClient = httpClient(isDebug, maxRequests)
 	client := unleash.NewAPIClient(unleashConfig)
 
 	return client
@@ -93,6 +96,10 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				MarkdownDescription: "Authorization token for Unleash API",
 				Optional:            true,
 				Sensitive:           true,
+			},
+			"max_concurrent_requests": schema.Int64Attribute{
+				MarkdownDescription: "Maximum number of concurrent HTTP requests the provider sends to the Unleash API. Defaults to `2`, which is the recommended value for most Unleash deployments. Increasing this value can overload Unleash instances with small database connection pools and should only be done when the backend capacity is known to support it. Can also be set with `UNLEASH_MAX_CONCURRENT_REQUESTS`.",
+				Optional:            true,
 			},
 		},
 		MarkdownDescription: `Interface with [Unleash server API](https://docs.getunleash.io/reference/api/unleash). This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
@@ -119,6 +126,36 @@ func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 			name+" cannot be an empty string",
 		)
 	}
+}
+
+func maxConcurrentRequests(configValue basetypes.Int64Value, diagnostics *diag.Diagnostics) int64 {
+	value := int64(2)
+
+	if envValue := os.Getenv("UNLEASH_MAX_CONCURRENT_REQUESTS"); envValue != "" {
+		parsed, err := strconv.ParseInt(envValue, 10, 64)
+		if err != nil {
+			diagnostics.AddError(
+				"Invalid UNLEASH_MAX_CONCURRENT_REQUESTS value",
+				fmt.Sprintf("UNLEASH_MAX_CONCURRENT_REQUESTS must be a positive integer, got %q", envValue),
+			)
+			return value
+		}
+		value = parsed
+	}
+
+	if !configValue.IsNull() && !configValue.IsUnknown() {
+		value = configValue.ValueInt64()
+	}
+
+	if value < 1 {
+		diagnostics.AddError(
+			"Invalid max_concurrent_requests value",
+			fmt.Sprintf("max_concurrent_requests must be at least 1, got %d", value),
+		)
+		return 2
+	}
+
+	return value
 }
 
 func terraformProviderAppName() string {
