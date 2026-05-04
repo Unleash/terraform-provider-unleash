@@ -60,8 +60,8 @@ func Test_concurrentRequestTransport_limitsRequestsUntilResponseBodyIsClosed(t *
 		}()
 	}
 
-	first := <-acquired
-	second := <-acquired
+	<-acquired
+	<-acquired
 
 	select {
 	case resp := <-acquired:
