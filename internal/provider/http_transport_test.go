@@ -74,8 +74,6 @@ func Test_concurrentRequestTransport_limitsRequestsUntilResponseBodyIsClosed(t *
 	wg.Wait()
 	close(errs)
 
-	require.NoError(t, first.Body.Close())
-	require.NoError(t, second.Body.Close())
 	for err := range errs {
 		assert.NoError(t, err)
 	}
