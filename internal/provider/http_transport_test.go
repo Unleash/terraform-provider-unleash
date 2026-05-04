@@ -32,6 +32,15 @@ func Test_concurrentRequestTransport_limitsRequestsUntilResponseBodyIsClosed(t *
 	acquired := make(chan *http.Response, 5)
 	errs := make(chan error, 5)
 	closeBodies := make(chan struct{})
+	var closeBodiesOnce sync.Once
+	unblockBodies := func() {
+		closeBodiesOnce.Do(func() {
+			close(closeBodies)
+		})
+	}
+	t.Cleanup(func() {
+		unblockBodies()
+	})
 
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
@@ -61,7 +70,7 @@ func Test_concurrentRequestTransport_limitsRequestsUntilResponseBodyIsClosed(t *
 	case <-time.After(50 * time.Millisecond):
 	}
 
-	close(closeBodies)
+	unblockBodies()
 	wg.Wait()
 	close(errs)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func httpClient(debug bool, maxConcurrentRequests int64) *http.Client {
+func httpClient(debug bool, maxConcurrentRequests int) *http.Client {
 	return &http.Client{
 		Transport: &concurrentRequestTransport{
 			Transport: newDebugTransport(debug),

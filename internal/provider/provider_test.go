@@ -75,10 +75,10 @@ func Test_provider_configValue(t *testing.T) {
 func Test_provider_maxConcurrentRequests(t *testing.T) {
 	var diags diag.Diagnostics
 
-	assert.Equal(t, int64(2), maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.Equal(t, 2, maxConcurrentRequests(types.Int64Null(), &diags))
 	assert.False(t, diags.HasError())
 
-	assert.Equal(t, int64(4), maxConcurrentRequests(types.Int64Value(4), &diags))
+	assert.Equal(t, 4, maxConcurrentRequests(types.Int64Value(4), &diags))
 	assert.False(t, diags.HasError())
 }
 
@@ -87,14 +87,42 @@ func Test_provider_maxConcurrentRequests_env(t *testing.T) {
 
 	var diags diag.Diagnostics
 
-	assert.Equal(t, int64(3), maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.Equal(t, 3, maxConcurrentRequests(types.Int64Null(), &diags))
 	assert.False(t, diags.HasError())
+}
+
+func Test_provider_maxConcurrentRequests_configOverridesInvalidEnv(t *testing.T) {
+	t.Setenv("UNLEASH_MAX_CONCURRENT_REQUESTS", "not-a-number")
+
+	var diags diag.Diagnostics
+
+	assert.Equal(t, 4, maxConcurrentRequests(types.Int64Value(4), &diags))
+	assert.False(t, diags.HasError())
+}
+
+func Test_provider_maxConcurrentRequests_env_rejectsNonNumericValue(t *testing.T) {
+	t.Setenv("UNLEASH_MAX_CONCURRENT_REQUESTS", "not-a-number")
+
+	var diags diag.Diagnostics
+
+	assert.Equal(t, 2, maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.True(t, diags.HasError())
+}
+
+func Test_provider_maxConcurrentRequests_env_rejectsInvalidValues(t *testing.T) {
+	t.Setenv("UNLEASH_MAX_CONCURRENT_REQUESTS", "0")
+
+	var diags diag.Diagnostics
+
+	assert.Equal(t, 2, maxConcurrentRequests(types.Int64Null(), &diags))
+	assert.True(t, diags.HasError())
+	assert.Contains(t, diags[0].Summary(), "UNLEASH_MAX_CONCURRENT_REQUESTS")
 }
 
 func Test_provider_maxConcurrentRequests_rejectsInvalidValues(t *testing.T) {
 	var diags diag.Diagnostics
 
-	assert.Equal(t, int64(2), maxConcurrentRequests(types.Int64Value(0), &diags))
+	assert.Equal(t, 2, maxConcurrentRequests(types.Int64Value(0), &diags))
 	assert.True(t, diags.HasError())
 }
 

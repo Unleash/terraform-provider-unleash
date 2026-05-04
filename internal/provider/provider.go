@@ -36,8 +36,11 @@ type UnleashProvider struct {
 }
 
 const (
-	UserAgent            = "Terraform-Provider-Unleash"
-	unleashAppNameHeader = "X-Unleash-AppName"
+	UserAgent                     = "Terraform-Provider-Unleash"
+	unleashAppNameHeader          = "X-Unleash-AppName"
+	defaultMaxConcurrentRequests  = 2
+	maxConcurrentRequestsEnvVar   = "UNLEASH_MAX_CONCURRENT_REQUESTS"
+	maxConcurrentRequestsMaxValue = int64(int(^uint(0) >> 1))
 )
 
 // ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
@@ -128,34 +131,44 @@ func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 	}
 }
 
-func maxConcurrentRequests(configValue basetypes.Int64Value, diagnostics *diag.Diagnostics) int64 {
-	value := int64(2)
+func maxConcurrentRequests(configValue basetypes.Int64Value, diagnostics *diag.Diagnostics) int {
+	if !configValue.IsNull() && !configValue.IsUnknown() {
+		return validateMaxConcurrentRequests("max_concurrent_requests", configValue.ValueInt64(), diagnostics)
+	}
 
-	if envValue := os.Getenv("UNLEASH_MAX_CONCURRENT_REQUESTS"); envValue != "" {
-		parsed, err := strconv.ParseInt(envValue, 10, 64)
+	if envValue := os.Getenv(maxConcurrentRequestsEnvVar); envValue != "" {
+		value, err := strconv.ParseInt(envValue, 10, 64)
 		if err != nil {
 			diagnostics.AddError(
-				"Invalid UNLEASH_MAX_CONCURRENT_REQUESTS value",
-				fmt.Sprintf("UNLEASH_MAX_CONCURRENT_REQUESTS must be a positive integer, got %q", envValue),
+				"Invalid "+maxConcurrentRequestsEnvVar+" value",
+				fmt.Sprintf("%s must be a positive integer, got %q", maxConcurrentRequestsEnvVar, envValue),
 			)
-			return value
+			return defaultMaxConcurrentRequests
 		}
-		value = parsed
+		return validateMaxConcurrentRequests(maxConcurrentRequestsEnvVar, value, diagnostics)
 	}
 
-	if !configValue.IsNull() && !configValue.IsUnknown() {
-		value = configValue.ValueInt64()
-	}
+	return defaultMaxConcurrentRequests
+}
 
+func validateMaxConcurrentRequests(name string, value int64, diagnostics *diag.Diagnostics) int {
 	if value < 1 {
 		diagnostics.AddError(
-			"Invalid max_concurrent_requests value",
-			fmt.Sprintf("max_concurrent_requests must be at least 1, got %d", value),
+			"Invalid "+name+" value",
+			fmt.Sprintf("%s must be at least 1, got %d", name, value),
 		)
-		return 2
+		return defaultMaxConcurrentRequests
 	}
 
-	return value
+	if value > maxConcurrentRequestsMaxValue {
+		diagnostics.AddError(
+			"Invalid "+name+" value",
+			fmt.Sprintf("%s must be less than or equal to %d, got %d", name, maxConcurrentRequestsMaxValue, value),
+		)
+		return defaultMaxConcurrentRequests
+	}
+
+	return int(value)
 }
 
 func terraformProviderAppName() string {
