@@ -28,3 +28,4 @@ provider "unleash" {
 
 - `authorization` (String, Sensitive) Authorization token for Unleash API
 - `base_url` (String) Unleash base URL (everything before `/api`)
+- `max_concurrent_requests` (Number) Maximum number of concurrent HTTP requests the provider sends to the Unleash API. Defaults to `2`, which is the recommended value for most Unleash deployments. Increasing this value can overload Unleash instances with small database connection pools and should only be done when the backend capacity is known to support it. Can also be set with `UNLEASH_MAX_CONCURRENT_REQUESTS`.

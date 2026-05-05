@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -35,14 +36,18 @@ type UnleashProvider struct {
 }
 
 const (
-	UserAgent            = "Terraform-Provider-Unleash"
-	unleashAppNameHeader = "X-Unleash-AppName"
+	UserAgent                     = "Terraform-Provider-Unleash"
+	unleashAppNameHeader          = "X-Unleash-AppName"
+	defaultMaxConcurrentRequests  = 2
+	maxConcurrentRequestsEnvVar   = "UNLEASH_MAX_CONCURRENT_REQUESTS"
+	maxConcurrentRequestsMaxValue = int64(int(^uint(0) >> 1))
 )
 
 // ScaffoldingProviderMofunc (p *UnleashProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {del describes the provider data model.
 type UnleashConfiguration struct {
-	BaseUrl       types.String `tfsdk:"base_url"`
-	Authorization types.String `tfsdk:"authorization"`
+	BaseUrl               types.String `tfsdk:"base_url"`
+	Authorization         types.String `tfsdk:"authorization"`
+	MaxConcurrentRequests types.Int64  `tfsdk:"max_concurrent_requests"`
 }
 
 func (p *UnleashProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -55,6 +60,7 @@ func unleashClient(ctx context.Context, provider *UnleashProvider, config *Unlea
 	authorization := configValue(config.Authorization, "AUTH_TOKEN", "UNLEASH_AUTH_TOKEN")
 	mustHave("base_url", base_url, diagnostics)
 	mustHave("authorization", authorization, diagnostics)
+	maxRequests := maxConcurrentRequests(config.MaxConcurrentRequests, diagnostics)
 
 	if diagnostics.HasError() {
 		return nil
@@ -76,7 +82,7 @@ func unleashClient(ctx context.Context, provider *UnleashProvider, config *Unlea
 
 	logLevel := strings.ToLower(os.Getenv("TF_LOG"))
 	isDebug := logLevel == "debug" || logLevel == "trace"
-	unleashConfig.HTTPClient = httpClient(isDebug)
+	unleashConfig.HTTPClient = httpClient(isDebug, maxRequests)
 	client := unleash.NewAPIClient(unleashConfig)
 
 	return client
@@ -93,6 +99,10 @@ func (p *UnleashProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				MarkdownDescription: "Authorization token for Unleash API",
 				Optional:            true,
 				Sensitive:           true,
+			},
+			"max_concurrent_requests": schema.Int64Attribute{
+				MarkdownDescription: "Maximum number of concurrent HTTP requests the provider sends to the Unleash API. Defaults to `2`, which is the recommended value for most Unleash deployments. Increasing this value can overload Unleash instances with small database connection pools and should only be done when the backend capacity is known to support it. Can also be set with `UNLEASH_MAX_CONCURRENT_REQUESTS`.",
+				Optional:            true,
 			},
 		},
 		MarkdownDescription: `Interface with [Unleash server API](https://docs.getunleash.io/reference/api/unleash). This provider implements a subset of the operations that can be done with Unleash. The focus is mostly in setting up the instance with projects, roles, permissions, groups, and other typical configuration usually performed by admins.
@@ -119,6 +129,46 @@ func mustHave(name string, value string, diagnostics *diag.Diagnostics) {
 			name+" cannot be an empty string",
 		)
 	}
+}
+
+func maxConcurrentRequests(configValue basetypes.Int64Value, diagnostics *diag.Diagnostics) int {
+	if !configValue.IsNull() && !configValue.IsUnknown() {
+		return validateMaxConcurrentRequests("max_concurrent_requests", configValue.ValueInt64(), diagnostics)
+	}
+
+	if envValue := os.Getenv(maxConcurrentRequestsEnvVar); envValue != "" {
+		value, err := strconv.ParseInt(envValue, 10, 64)
+		if err != nil {
+			diagnostics.AddError(
+				"Invalid "+maxConcurrentRequestsEnvVar+" value",
+				fmt.Sprintf("%s must be a positive integer, got %q", maxConcurrentRequestsEnvVar, envValue),
+			)
+			return defaultMaxConcurrentRequests
+		}
+		return validateMaxConcurrentRequests(maxConcurrentRequestsEnvVar, value, diagnostics)
+	}
+
+	return defaultMaxConcurrentRequests
+}
+
+func validateMaxConcurrentRequests(name string, value int64, diagnostics *diag.Diagnostics) int {
+	if value < 1 {
+		diagnostics.AddError(
+			"Invalid "+name+" value",
+			fmt.Sprintf("%s must be at least 1, got %d", name, value),
+		)
+		return defaultMaxConcurrentRequests
+	}
+
+	if value > maxConcurrentRequestsMaxValue {
+		diagnostics.AddError(
+			"Invalid "+name+" value",
+			fmt.Sprintf("%s must be less than or equal to %d, got %d", name, maxConcurrentRequestsMaxValue, value),
+		)
+		return defaultMaxConcurrentRequests
+	}
+
+	return int(value)
 }
 
 func terraformProviderAppName() string {
