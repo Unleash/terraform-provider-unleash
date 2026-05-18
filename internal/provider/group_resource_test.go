@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -32,9 +31,7 @@ func customCheckGroupMappingSSOExists(resourceName string, mapping string) resou
 }
 
 func TestAccGroupResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -239,9 +236,7 @@ func TestAccGroupResource(t *testing.T) {
 
 // TestAccGroupResource_MinimalConfig tests creating a group with minimal configuration.
 func TestAccGroupResource_MinimalConfig(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -263,9 +258,7 @@ func TestAccGroupResource_MinimalConfig(t *testing.T) {
 
 // TestAccGroupResource_RemoveOptionalFields tests removing optional fields.
 func TestAccGroupResource_RemoveOptionalFields(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

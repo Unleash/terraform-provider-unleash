@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 
@@ -75,9 +74,7 @@ resource "unleash_user" "%s" {
 }`, resource, name)
 }
 func TestAccUserResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -135,9 +132,7 @@ func TestAccUserResource(t *testing.T) {
 }
 
 func TestAccUserResourceImport(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
