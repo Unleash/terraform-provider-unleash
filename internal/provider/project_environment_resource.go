@@ -316,40 +316,55 @@ func (r *projectEnvironmentResource) configureProjectEnvironment(ctx context.Con
 }
 
 func (r *projectEnvironmentResource) hydrateState(ctx context.Context, state *projectEnvironmentResourceModel, diagnostics *diag.Diagnostics) bool {
-	environments, getEnvironmentsResponse, getEnvironmentsErr := r.client.EnvironmentsAPI.GetProjectEnvironments(ctx, state.ProjectId.ValueString()).Execute()
-	if !ValidateApiResponse(getEnvironmentsResponse, 200, diagnostics, getEnvironmentsErr) {
+	enabled, ok := r.projectEnvironmentIsEnabled(ctx, state.ProjectId.ValueString(), state.EnvironmentName.ValueString(), diagnostics)
+	if !ok {
 		return false
 	}
 
-	for _, environment := range environments.Environments {
-		if environment.Name != state.EnvironmentName.ValueString() {
-			continue
-		}
+	if !enabled {
+		diagnostics.AddError(
+			"Environment not found in project",
+			fmt.Sprintf("Environment %s is not enabled for project %s", state.EnvironmentName.ValueString(), state.ProjectId.ValueString()),
+		)
+		return false
+	}
 
-		if !shouldManageChangeRequests(state.ChangeRequestsEnabled, state.RequiredApprovals) {
-			state.normalizeUnmanagedChangeRequestConfig()
-			return true
-		}
-
-		config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
-		if isNotFoundResponse(getResponse) {
-			state.syncChangeRequestConfigNotFound()
-			return true
-		}
-
-		if !ValidateApiResponse(getResponse, 200, diagnostics, getErr) {
-			return false
-		}
-
-		state.syncChangeRequestConfigFromApi(config)
+	if !shouldManageChangeRequests(state.ChangeRequestsEnabled, state.RequiredApprovals) {
+		state.normalizeUnmanagedChangeRequestConfig()
 		return true
 	}
 
-	diagnostics.AddError(
-		"Environment not found in project",
-		fmt.Sprintf("Environment %s is not enabled for project %s", state.EnvironmentName.ValueString(), state.ProjectId.ValueString()),
-	)
-	return false
+	return r.hydrateManagedChangeRequestState(ctx, state, diagnostics)
+}
+
+func (r *projectEnvironmentResource) projectEnvironmentIsEnabled(ctx context.Context, projectId string, envName string, diagnostics *diag.Diagnostics) (bool, bool) {
+	environments, getEnvironmentsResponse, getEnvironmentsErr := r.client.EnvironmentsAPI.GetProjectEnvironments(ctx, projectId).Execute()
+	if !ValidateApiResponse(getEnvironmentsResponse, 200, diagnostics, getEnvironmentsErr) {
+		return false, false
+	}
+
+	for _, environment := range environments.Environments {
+		if environment.Name == envName {
+			return true, true
+		}
+	}
+
+	return false, true
+}
+
+func (r *projectEnvironmentResource) hydrateManagedChangeRequestState(ctx context.Context, state *projectEnvironmentResourceModel, diagnostics *diag.Diagnostics) bool {
+	config, getResponse, getErr := r.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
+	if isNotFoundResponse(getResponse) {
+		state.syncChangeRequestConfigNotFound()
+		return true
+	}
+
+	if !ValidateApiResponse(getResponse, 200, diagnostics, getErr) {
+		return false
+	}
+
+	state.syncChangeRequestConfigFromApi(config)
+	return true
 }
 
 func (m *projectEnvironmentResourceModel) hydrateResponseFromApi(config []unleash.ChangeRequestEnvironmentConfigSchema) {
