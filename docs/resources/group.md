@@ -3,12 +3,12 @@
 page_title: "unleash_group Resource - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  Group schema
+  Manage an Unleash group. The mappings_sso attribute contains external SSO/IdP group names that should map users into this Unleash group.
 ---
 
 # unleash_group (Resource)
 
-Group schema
+Manage an Unleash group. The mappings_sso attribute contains external SSO/IdP group names that should map users into this Unleash group.
 
 ## Example Usage
 
@@ -39,7 +39,7 @@ resource "unleash_group" "team" {
 ### Optional
 
 - `description` (String) A description of the group's purpose.
-- `mappings_sso` (List of String) SSO group mappings for this group.
+- `mappings_sso` (List of String) External SSO/IdP group names that should map users into this Unleash group.
 - `root_role` (Number) The root role ID for this group.
 - `users` (List of Number) List of user IDs to add to this group
 

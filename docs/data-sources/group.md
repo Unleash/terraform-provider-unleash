@@ -3,12 +3,12 @@
 page_title: "unleash_group Data Source - terraform-provider-unleash"
 subcategory: ""
 description: |-
-  Fetch a group by id or name.
+  Fetch a group by id or name. The mappings_sso attribute contains external SSO/IdP group names mapped to this Unleash group.
 ---
 
 # unleash_group (Data Source)
 
-Fetch a group by id or name.
+Fetch a group by id or name. The mappings_sso attribute contains external SSO/IdP group names mapped to this Unleash group.
 
 ## Example Usage
 
@@ -33,6 +33,6 @@ data "unleash_group" "team_by_id" {
 ### Read-Only
 
 - `description` (String) A description of the group's purpose.
-- `mappings_sso` (List of String) SSO group mappings for this group.
+- `mappings_sso` (List of String) External SSO/IdP group names mapped to this Unleash group.
 - `root_role` (Number) The root role ID for this group.
 - `users` (List of Number) List of user IDs in this group.

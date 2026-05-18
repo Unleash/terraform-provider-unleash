@@ -212,7 +212,7 @@ func (r *groupResource) Metadata(_ context.Context, req resource.MetadataRequest
 
 func (r *groupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Group schema",
+		Description: "Manage an Unleash group. The mappings_sso attribute contains external SSO/IdP group names that should map users into this Unleash group.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this group",
@@ -227,7 +227,7 @@ func (r *groupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Optional:    true,
 			},
 			"mappings_sso": schema.ListAttribute{
-				Description: "SSO group mappings for this group.",
+				Description: "External SSO/IdP group names that should map users into this Unleash group.",
 				Optional:    true,
 				ElementType: types.StringType,
 			},

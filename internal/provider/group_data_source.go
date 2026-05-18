@@ -55,7 +55,7 @@ func (d *groupDataSource) ConfigValidators(_ context.Context) []datasource.Confi
 
 func (d *groupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetch a group by id or name.",
+		Description: "Fetch a group by id or name. The mappings_sso attribute contains external SSO/IdP group names mapped to this Unleash group.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Identifier for this group",
@@ -72,7 +72,7 @@ func (d *groupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Computed:    true,
 			},
 			"mappings_sso": schema.ListAttribute{
-				Description: "SSO group mappings for this group.",
+				Description: "External SSO/IdP group names mapped to this Unleash group.",
 				Computed:    true,
 				ElementType: types.StringType,
 			},
