@@ -108,13 +108,14 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
+	state.ProjectId = types.StringValue(state.ProjectId.ValueString())
+	state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
+	state.Enabled = types.BoolValue(true)
+
 	config, getResponse, getErr := d.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
 	if isNotFoundResponse(getResponse) {
-		state.ProjectId = types.StringValue(state.ProjectId.ValueString())
-		state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
 		state.ChangeRequestsEnabled = types.BoolValue(false)
 		state.RequiredApprovals = types.Int64Null()
-		state.Enabled = types.BoolValue(true)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
@@ -132,11 +133,8 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	if envChangeRequestConfig == nil {
-		state.ProjectId = types.StringValue(state.ProjectId.ValueString())
-		state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
 		state.ChangeRequestsEnabled = types.BoolValue(false)
 		state.RequiredApprovals = types.Int64Null()
-		state.Enabled = types.BoolValue(true)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
@@ -149,11 +147,8 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 		requiredApprovals = types.Int64Null()
 	}
 
-	state.ProjectId = types.StringValue(state.ProjectId.ValueString())
-	state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
 	state.ChangeRequestsEnabled = types.BoolValue(envChangeRequestConfig.ChangeRequestEnabled)
 	state.RequiredApprovals = requiredApprovals
-	state.Enabled = types.BoolValue(true)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading project environment change request", map[string]interface{}{"success": true})
