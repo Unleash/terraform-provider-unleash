@@ -86,14 +86,45 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
+	environments, getEnvironmentsResponse, getEnvironmentsErr := d.client.EnvironmentsAPI.GetProjectEnvironments(ctx, state.ProjectId.ValueString()).Execute()
+
+	if !ValidateApiResponse(getEnvironmentsResponse, 200, &resp.Diagnostics, getEnvironmentsErr) {
+		return
+	}
+
+	enabled := false
+	for _, env := range environments.Environments {
+		if env.Name == state.EnvironmentName.ValueString() {
+			enabled = true
+			break
+		}
+	}
+
+	if !enabled {
+		state.ChangeRequestsEnabled = types.BoolValue(false)
+		state.RequiredApprovals = types.Int64Null()
+		state.Enabled = types.BoolValue(false)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
+
+	state.ProjectId = types.StringValue(state.ProjectId.ValueString())
+	state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
+	state.Enabled = types.BoolValue(true)
+
 	config, getResponse, getErr := d.client.ChangeRequestsAPI.GetProjectChangeRequestConfig(ctx, state.ProjectId.ValueString()).Execute()
+	if isNotFoundResponse(getResponse) {
+		state.ChangeRequestsEnabled = types.BoolValue(false)
+		state.RequiredApprovals = types.Int64Null()
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
 
 	if !ValidateApiResponse(getResponse, 200, &resp.Diagnostics, getErr) {
 		return
 	}
 
 	var envChangeRequestConfig *unleash.ChangeRequestEnvironmentConfigSchema
-
 	for _, env := range config {
 		if env.Environment == state.EnvironmentName.ValueString() {
 			envChangeRequestConfig = &env
@@ -104,7 +135,6 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 	if envChangeRequestConfig == nil {
 		state.ChangeRequestsEnabled = types.BoolValue(false)
 		state.RequiredApprovals = types.Int64Null()
-		state.Enabled = types.BoolValue(false)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
@@ -117,11 +147,8 @@ func (d *projectEnvironmentDataSource) Read(ctx context.Context, req datasource.
 		requiredApprovals = types.Int64Null()
 	}
 
-	state.ProjectId = types.StringValue(state.ProjectId.ValueString())
-	state.EnvironmentName = types.StringValue(state.EnvironmentName.ValueString())
 	state.ChangeRequestsEnabled = types.BoolValue(envChangeRequestConfig.ChangeRequestEnabled)
 	state.RequiredApprovals = requiredApprovals
-	state.Enabled = types.BoolValue(true)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading project environment change request", map[string]interface{}{"success": true})

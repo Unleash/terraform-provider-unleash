@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -86,9 +85,7 @@ func testAccSampleProjectResourceWithUpdatedEnterpriseSettings(name string, id s
 }
 
 func TestAccProjectResource(t *testing.T) {
-	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
-		t.Skip("Skipping enterprise tests")
-	}
+	skipUnlessEnterpriseCompatiblePlan(t)
 
 	randomID := func() string {
 		return fmt.Sprintf("tf-acc-%s", strings.ToLower(acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)))

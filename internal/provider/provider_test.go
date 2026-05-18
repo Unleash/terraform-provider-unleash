@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -38,6 +39,45 @@ func testAccPreCheck(_ *testing.T) {
 	envOrDefault("UNLEASH_URL", "http://localhost:4242")
 	envOrDefault("AUTH_TOKEN", "*:*.unleash-insecure-admin-api-token")
 	envOrDefault("UNLEASH_ENTERPRISE", "false")
+}
+
+func currentUnleashPlan() string {
+	plan := strings.ToLower(os.Getenv("UNLEASH_PLAN"))
+	if plan != "" {
+		return plan
+	}
+
+	if os.Getenv("UNLEASH_ENTERPRISE") == "true" {
+		return "enterprise"
+	}
+
+	return "oss"
+}
+
+func supportsEnterpriseAcceptanceTests() bool {
+	if os.Getenv("UNLEASH_ENTERPRISE") != "true" {
+		return false
+	}
+
+	switch currentUnleashPlan() {
+	case "enterprise", "pro":
+		return true
+	default:
+		return false
+	}
+}
+
+func skipUnlessEnterpriseCompatiblePlan(t *testing.T) {
+	t.Helper()
+
+	if supportsEnterpriseAcceptanceTests() {
+		return
+	}
+
+	t.Skipf(
+		"Skipping enterprise-compatible tests (requires UNLEASH_ENTERPRISE=true and UNLEASH_PLAN=enterprise or pro, got UNLEASH_PLAN=%q)",
+		currentUnleashPlan(),
+	)
 }
 
 func Test_provider_checkIsSupportedVersion_556(t *testing.T) {
@@ -147,4 +187,44 @@ func Test_unleashClient_setsUnleashHeaders(t *testing.T) {
 		assert.NotContains(t, headers, "X-Unleash-InstanceId")
 		assert.Equal(t, UserAgent+"/"+p.version, cfg.UserAgent)
 	}
+}
+
+func Test_currentUnleashPlan(t *testing.T) {
+	t.Run("defaults to oss", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "false")
+		t.Setenv("UNLEASH_PLAN", "")
+		assert.Equal(t, "oss", currentUnleashPlan())
+	})
+
+	t.Run("defaults to enterprise when enterprise env is set", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "true")
+		t.Setenv("UNLEASH_PLAN", "")
+		assert.Equal(t, "enterprise", currentUnleashPlan())
+	})
+
+	t.Run("uses explicit plan", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "true")
+		t.Setenv("UNLEASH_PLAN", "PrO")
+		assert.Equal(t, "pro", currentUnleashPlan())
+	})
+}
+
+func Test_supportsEnterpriseAcceptanceTests(t *testing.T) {
+	t.Run("oss does not support enterprise acceptance tests", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "false")
+		t.Setenv("UNLEASH_PLAN", "")
+		assert.False(t, supportsEnterpriseAcceptanceTests())
+	})
+
+	t.Run("enterprise plan supports enterprise acceptance tests", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "true")
+		t.Setenv("UNLEASH_PLAN", "enterprise")
+		assert.True(t, supportsEnterpriseAcceptanceTests())
+	})
+
+	t.Run("pro plan supports enterprise acceptance tests", func(t *testing.T) {
+		t.Setenv("UNLEASH_ENTERPRISE", "true")
+		t.Setenv("UNLEASH_PLAN", "pro")
+		assert.True(t, supportsEnterpriseAcceptanceTests())
+	})
 }
