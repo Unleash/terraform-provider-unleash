@@ -243,6 +243,7 @@ func (p *UnleashProvider) Resources(ctx context.Context) []func() resource.Resou
 func (p *UnleashProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewUserDataSource,
+		NewGroupDataSource,
 		NewProjectDataSource,
 		NewPermissionDataSource,
 		NewRoleDataSource,
