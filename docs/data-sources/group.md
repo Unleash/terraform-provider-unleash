@@ -27,8 +27,8 @@ data "unleash_group" "team_by_id" {
 
 ### Optional
 
-- `id` (String) Identifier for this group
-- `name` (String) Name for this group
+- `id` (String) Group ID to look up. If name is also provided, it must match the returned group name.
+- `name` (String) Group name to look up. If id is also provided, the group returned by that id must have this name.
 
 ### Read-Only
 

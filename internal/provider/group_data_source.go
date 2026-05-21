@@ -6,10 +6,12 @@ import (
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	datasourcevalidator "github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -58,14 +60,20 @@ func (d *groupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 		Description: "Fetch a group by id or name. The mappings_sso attribute contains external SSO/IdP group names mapped to this Unleash group.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Identifier for this group",
+				Description: "Group ID to look up. If name is also provided, it must match the returned group name.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
-				Description: "Name for this group",
+				Description: "Group name to look up. If id is also provided, the group returned by that id must have this name.",
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"description": schema.StringAttribute{
 				Description: "A description of the group's purpose.",
