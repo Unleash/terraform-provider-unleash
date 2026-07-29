@@ -51,6 +51,13 @@ func TestAccEnvironmentResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_environment.fynbos_environment", "type", "semi-desert"),
 				),
 			},
+			{
+				ResourceName:                         "unleash_environment.fynbos_environment",
+				ImportStateId:                        "nama_karoo",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "name",
+			},
 		},
 	})
 }

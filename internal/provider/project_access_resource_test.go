@@ -118,6 +118,13 @@ func TestAccProjectAccessResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_project_access.sample_project_access", "roles.1.users.#", "1"),
 				),
 			},
+			{
+				ResourceName:                         "unleash_project_access.sample_project_access",
+				ImportStateId:                        "sample",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "project",
+			},
 		},
 	})
 }

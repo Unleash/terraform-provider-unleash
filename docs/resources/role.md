@@ -13,6 +13,11 @@ Role schema
 ## Example Usage
 
 ```terraform
+import {
+  id = "1"
+  to = unleash_role.custom_root_role
+}
+
 resource "unleash_role" "custom_root_role" {
   name        = "A custom role"
   type        = "root-custom"
@@ -24,7 +29,7 @@ resource "unleash_role" "custom_root_role" {
   }]
 }
 
-resource "unleash_role" "custom_root_role" {
+resource "unleash_role" "renamed_custom_root_role" {
   name        = "Renamed custom role"
   type        = "root-custom"
   description = "A custom test root role"

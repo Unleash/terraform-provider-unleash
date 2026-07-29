@@ -1,3 +1,8 @@
+import {
+  id = "1"
+  to = unleash_group.team
+}
+
 resource "unleash_user" "group_member" {
   email      = "group-member@example.com"
   name       = "Group Member"

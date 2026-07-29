@@ -71,6 +71,18 @@ make testacc
 - `golangci-lint run --fix` to lint the code (You can install it with `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`)
 - `go generate ./...` to update docs
 
+## Releasing
+
+Releases are handled by GitHub Actions and GoReleaser. The release workflow in `.github/workflows/release.yml` runs when a tag matching `v*` is pushed, for example `v3.4.2`.
+
+The normal release flow is:
+
+1. Make sure the intended release commit is on `main` and CI is green.
+1. Open [GitHub releases](https://github.com/Unleash/terraform-provider-unleash/releases) and draft a new release.
+1. Set the tag to the new semantic version, prefixed with `v`, for example `v3.4.2`, targeting `main`.
+1. Publish the release.
+1. The pushed tag triggers the `Release` workflow, which runs GoReleaser, builds the provider artifacts, signs the checksums with the configured GPG key, and uploads the release assets.
+
 ## Using the provider
 
 Fill this in for each provider

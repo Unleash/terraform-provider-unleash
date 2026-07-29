@@ -93,6 +93,13 @@ func TestAccContextFieldResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_context_field.cheese_context_field", "legal_values.0.description", "More gooey, more delicious"),
 				),
 			},
+			{
+				ResourceName:                         "unleash_context_field.cheese_context_field",
+				ImportStateId:                        "cheese_monger_stock",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "name",
+			},
 		},
 	})
 }

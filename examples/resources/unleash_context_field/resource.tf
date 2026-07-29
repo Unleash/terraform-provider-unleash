@@ -1,3 +1,8 @@
+import {
+  id = "ham"
+  to = unleash_context_field.ham_context_field
+}
+
 resource "unleash_context_field" "ham_context_field" {
   name = "ham"
 }
