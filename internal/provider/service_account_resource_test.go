@@ -31,6 +31,11 @@ func TestAccServiceAccountResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_service_account.test_service_account", "root_role", "1"),
 				),
 			},
+			{
+				ResourceName:      "unleash_service_account.test_service_account",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }

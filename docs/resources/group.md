@@ -13,6 +13,11 @@ Manage an Unleash group. The mappings_sso attribute contains external SSO/IdP gr
 ## Example Usage
 
 ```terraform
+import {
+  id = "1"
+  to = unleash_group.team
+}
+
 resource "unleash_user" "group_member" {
   email      = "group-member@example.com"
   name       = "Group Member"

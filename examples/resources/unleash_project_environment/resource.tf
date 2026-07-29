@@ -1,3 +1,8 @@
+import {
+  id = "one:outerspace"
+  to = unleash_project_environment.space_environment
+}
+
 resource "unleash_project" "project_1" {
   id          = "one"
   name        = "First project"
