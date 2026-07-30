@@ -8,7 +8,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/Unleash/terraform-provider-unleash/internal/provider"
+	"github.com/Unleash/terraform-provider-unleash/v3/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
