@@ -1,4 +1,4 @@
-module github.com/Unleash/terraform-provider-unleash
+module github.com/Unleash/terraform-provider-unleash/v3
 
 go 1.24.0
 

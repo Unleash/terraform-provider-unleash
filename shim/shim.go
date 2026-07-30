@@ -13,7 +13,7 @@ package shim
 import (
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 
-	internalprovider "github.com/Unleash/terraform-provider-unleash/internal/provider"
+	internalprovider "github.com/Unleash/terraform-provider-unleash/v3/internal/provider"
 )
 
 // New returns the Unleash provider constructor, identical to the one used by
