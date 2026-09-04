@@ -127,17 +127,38 @@ func TestHydrateFromApi(t *testing.T) {
 	environment.Type = "semi-arid"
 	environment.SetRequiredApprovals(4)
 
-	var model environmentResourceModel
-	model.hydrateFromApi(*environment)
+	tests := []struct {
+		name                    string
+		manageRequiredApprovals bool
+		expectedApprovals       types.Int64
+	}{
+		{
+			name:                    "managed approvals are hydrated from the API",
+			manageRequiredApprovals: true,
+			expectedApprovals:       types.Int64Value(4),
+		},
+		{
+			name:                    "unmanaged approvals remain null despite an API value",
+			manageRequiredApprovals: false,
+			expectedApprovals:       types.Int64Null(),
+		},
+	}
 
-	if model.Name.ValueString() != "fynbos" {
-		t.Fatalf("expected name fynbos, got %s", model.Name.ValueString())
-	}
-	if model.Type.ValueString() != "semi-arid" {
-		t.Fatalf("expected type semi-arid, got %s", model.Type.ValueString())
-	}
-	if !model.RequiredApprovals.Equal(types.Int64Value(4)) {
-		t.Fatalf("expected 4 required approvals, got %v", model.RequiredApprovals)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var model environmentResourceModel
+			model.hydrateFromApi(*environment, test.manageRequiredApprovals)
+
+			if model.Name.ValueString() != "fynbos" {
+				t.Fatalf("expected name fynbos, got %s", model.Name.ValueString())
+			}
+			if model.Type.ValueString() != "semi-arid" {
+				t.Fatalf("expected type semi-arid, got %s", model.Type.ValueString())
+			}
+			if !model.RequiredApprovals.Equal(test.expectedApprovals) {
+				t.Fatalf("expected %v required approvals, got %v", test.expectedApprovals, model.RequiredApprovals)
+			}
+		})
 	}
 }
 

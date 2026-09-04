@@ -89,6 +89,9 @@ func TestAccEnvironmentResourceWithRequiredApprovals(t *testing.T) {
 				ImportState:                          true,
 				ImportStateVerify:                    true,
 				ImportStateVerifyIdentifierAttribute: "name",
+				// Import cannot tell whether the optional attribute should be managed. Leave it
+				// unmanaged until it is explicitly present in configuration.
+				ImportStateVerifyIgnore: []string{"required_approvals"},
 			},
 			{
 				//modify the number of required approvals
