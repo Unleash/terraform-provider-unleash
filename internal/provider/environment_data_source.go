@@ -24,8 +24,9 @@ type environmentDataSource struct {
 }
 
 type environmentDataSourceModel struct {
-	Name types.String `tfsdk:"name"`
-	Type types.String `tfsdk:"type"`
+	Name              types.String `tfsdk:"name"`
+	Type              types.String `tfsdk:"type"`
+	RequiredApprovals types.Int64  `tfsdk:"required_approvals"`
 }
 
 func (d *environmentDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
@@ -57,6 +58,12 @@ func (d *environmentDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 					"You can pass other values and Unleash will accept them but they will carry no special semantics.",
 				Required: true,
 			},
+			"required_approvals": schema.Int64Attribute{
+				Description: "The number of approvals a change request must collect before it can be applied in this environment. " +
+					"Set when the environment turns on environment-level change requests, null otherwise. " +
+					"Use the required_approvals attribute of the unleash_environment resource to configure it.",
+				Computed: true,
+			},
 		},
 	}
 }
@@ -78,8 +85,9 @@ func (d *environmentDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 
 	state = environmentDataSourceModel{
-		Name: types.StringValue(environment.Name),
-		Type: types.StringValue(environment.Type),
+		Name:              types.StringValue(environment.Name),
+		Type:              types.StringValue(environment.Type),
+		RequiredApprovals: requiredApprovalsFromApi(environment.RequiredApprovals),
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
