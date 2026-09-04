@@ -115,7 +115,7 @@ func (r *environmentResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	requestedApprovals := plan.RequiredApprovals
-	plan.hydrateFromApi(*environment)
+	plan.hydrateFromApi(*environment, hasRequiredApprovals(requestedApprovals))
 	if !requiredApprovalsWereApplied(requestedApprovals, plan.RequiredApprovals, &resp.Diagnostics) {
 		return
 	}
@@ -140,7 +140,8 @@ func (r *environmentResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	state.hydrateFromApi(*environment)
+	manageRequiredApprovals := hasRequiredApprovals(state.RequiredApprovals)
+	state.hydrateFromApi(*environment, manageRequiredApprovals)
 
 	resp.State.Set(ctx, &state)
 
@@ -169,7 +170,7 @@ func (r *environmentResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	requestedApprovals := plan.RequiredApprovals
-	plan.hydrateFromApi(*environment)
+	plan.hydrateFromApi(*environment, hasRequiredApprovals(requestedApprovals))
 	if !requiredApprovalsWereApplied(requestedApprovals, plan.RequiredApprovals, &resp.Diagnostics) {
 		return
 	}
@@ -197,10 +198,16 @@ func (r *environmentResource) Delete(ctx context.Context, req resource.DeleteReq
 	tflog.Debug(ctx, "Finished deleting environment resource", map[string]interface{}{"success": true})
 }
 
-func (m *environmentResourceModel) hydrateFromApi(api unleash.EnvironmentSchema) {
+func (m *environmentResourceModel) hydrateFromApi(api unleash.EnvironmentSchema, manageRequiredApprovals bool) {
 	m.Name = types.StringValue(api.Name)
 	m.Type = types.StringValue(api.Type)
-	m.RequiredApprovals = requiredApprovalsFromApi(api.RequiredApprovals)
+	if manageRequiredApprovals {
+		m.RequiredApprovals = requiredApprovalsFromApi(api.RequiredApprovals)
+	} else {
+		// Keep an omitted attribute null so an existing environment-level change request
+		// configuration does not become managed merely because Terraform refreshed it.
+		m.RequiredApprovals = types.Int64Null()
+	}
 }
 
 // Sends requiredApprovals only when Terraform manages it: instances without environment-level
