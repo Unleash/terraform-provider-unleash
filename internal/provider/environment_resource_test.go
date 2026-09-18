@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -57,6 +58,92 @@ func TestAccEnvironmentResource(t *testing.T) {
 				ImportState:                          true,
 				ImportStateVerify:                    true,
 				ImportStateVerifyIdentifierAttribute: "name",
+			},
+		},
+	})
+}
+
+func TestAccEnvironmentResourceWithRequiredApprovals(t *testing.T) {
+	skipUnlessEnterpriseCompatiblePlan(t)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				//created straight away with environment level change requests
+				Config: `
+					resource "unleash_environment" "karoo_environment" {
+						name               = "succulent_karoo"
+						type               = "semi-desert"
+						required_approvals = 3
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("unleash_environment.karoo_environment", "name", "succulent_karoo"),
+					resource.TestCheckResourceAttr("unleash_environment.karoo_environment", "required_approvals", "3"),
+				),
+			},
+			{
+				ResourceName:                         "unleash_environment.karoo_environment",
+				ImportStateId:                        "succulent_karoo",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "name",
+				// Import cannot tell whether the optional attribute should be managed. Leave it
+				// unmanaged until it is explicitly present in configuration.
+				ImportStateVerifyIgnore: []string{"required_approvals"},
+			},
+			{
+				//modify the number of required approvals
+				Config: `
+					resource "unleash_environment" "karoo_environment" {
+						name               = "succulent_karoo"
+						type               = "semi-desert"
+						required_approvals = 5
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("unleash_environment.karoo_environment", "required_approvals", "5"),
+				),
+			},
+			{
+				//removing the attribute clears the environment level configuration
+				Config: `
+					resource "unleash_environment" "karoo_environment" {
+						name = "succulent_karoo"
+						type = "semi-desert"
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("unleash_environment.karoo_environment", "required_approvals"),
+				),
+			},
+			{
+				//required_approvals must be a valid number of approvals.
+				//PlanOnly keeps this from touching state, and the step below restores a
+				//valid config so the post-test destroy still plans successfully.
+				Config: `
+					resource "unleash_environment" "karoo_environment" {
+						name               = "succulent_karoo"
+						type               = "semi-desert"
+						required_approvals = 0
+					}
+				`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile("The required_approvals attribute must be between 1 and 10"),
+			},
+			{
+				//back to a valid configuration
+				Config: `
+					resource "unleash_environment" "karoo_environment" {
+						name               = "succulent_karoo"
+						type               = "semi-desert"
+						required_approvals = 3
+					}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("unleash_environment.karoo_environment", "required_approvals", "3"),
+				),
 			},
 		},
 	})

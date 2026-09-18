@@ -20,6 +20,7 @@ func TestAccEnvironmentDataSource(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.unleash_environment.development", "name", "development"),
 					resource.TestCheckResourceAttr("data.unleash_environment.development", "type", "development"),
+					resource.TestCheckNoResourceAttr("data.unleash_environment.development", "required_approvals"),
 				),
 			},
 		},

@@ -19,3 +19,7 @@ Access existing environments.
 
 - `name` (String) The name of the environment. Must be a URL-friendly string according to RFC 3968.
 - `type` (String) The type of the environment. Unleash recognizes 'development', 'test', 'preproduction' and 'production'. You can pass other values and Unleash will accept them but they will carry no special semantics.
+
+### Read-Only
+
+- `required_approvals` (Number) The number of approvals a change request must collect before it can be applied in this environment. Set when the environment turns on environment-level change requests, null otherwise. Use the required_approvals attribute of the unleash_environment resource to configure it.
