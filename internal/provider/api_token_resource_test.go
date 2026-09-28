@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"os"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccApiTokenResource(t *testing.T) {
@@ -43,6 +43,8 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "token_name", "client_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_token", "secure", "true"),
+					resource.TestCheckResourceAttrSet("unleash_api_token.client_token", "identifier"),
 				),
 			},
 			{ // test change expire date for previous token
@@ -60,6 +62,8 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "token_name", "client_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_token", "secure", "true"),
+					resource.TestCheckResourceAttrSet("unleash_api_token.client_token", "identifier"),
 				),
 			},
 			{
@@ -73,14 +77,26 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttrSet("unleash_api_token.client_no_expire", "secret"),
 					resource.TestCheckNoResourceAttr("unleash_api_token.client_no_expire", "expires_at"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "token_name", "client_no_expire"),
-					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "environment", func() string {
-						if v := os.Getenv("DEFAULT_ENVIRONMENT"); v != "" {
-							return v
-						} else {
-							return "development"
-						}
-					}()),
+					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "secure", "true"),
+					resource.TestCheckResourceAttrSet("unleash_api_token.client_no_expire", "identifier"),
+				),
+			},
+			{
+				Config: `
+                resource "unleash_api_token" "secure_v2" {
+                    token_name = "secure_v2"
+                    type = "client"
+                    projects = ["*"]
+                }`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("unleash_api_token.secure_v2", "secret"),
+					resource.TestCheckNoResourceAttr("unleash_api_token.secure_v2", "expires_at"),
+					resource.TestCheckResourceAttr("unleash_api_token.secure_v2", "token_name", "secure_v2"),
+					resource.TestCheckResourceAttr("unleash_api_token.secure_v2", "projects.0", "*"),
+					resource.TestCheckResourceAttr("unleash_api_token.secure_v2", "secure", "true"),
+					resource.TestCheckResourceAttrSet("unleash_api_token.secure_v2", "identifier"),
 				),
 			},
 		},

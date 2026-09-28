@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -43,6 +44,10 @@ type apiTokenResourceModel struct {
 	Projects types.Set `tfsdk:"projects"`
 	// The token's expiration date. NULL if the token doesn't have an expiration set.
 	ExpiresAt types.String `tfsdk:"expires_at"`
+	// If the token is secure. If true, the secret will never be listed
+	Secure types.Bool `tfsdk:"secure"`
+	// Identifier, used when token is secure.
+	Identifier types.String `tfsdk:"identifier"`
 }
 
 // Configure adds the provider configured client to the data source.
@@ -103,6 +108,16 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "When the token expires",
 				Optional:    true,
 			},
+			"secure": schema.BoolAttribute{
+				Description: "If true the token uses the new v2 format and the full secret will never be returned after the creation call",
+				Optional:    true,
+				Computed:    true,
+			},
+			"identifier": schema.StringAttribute{
+				Description: "Set if the token uses the new v2 format, used where v1 would use Secret",
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -155,6 +170,15 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	newState.Secret = types.StringValue(token.Secret)
 	newState.TokenName = types.StringValue(token.TokenName)
 	newState.Type = types.StringValue(token.Type)
+	identifier, found := extractIdentifier(token.Secret)
+	if found {
+		tflog.Debug(ctx, fmt.Sprintf("Found token type v2"))
+		newState.Secure = types.BoolValue(true)
+		newState.Identifier = types.StringValue(identifier)
+	} else {
+		newState.Secure = types.BoolValue(false)
+		newState.Identifier = types.StringNull()
+	}
 	if token.Environment != nil {
 		newState.Environment = types.StringValue(*token.Environment)
 	} else {
@@ -207,8 +231,13 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	var token *unleash.ApiTokenSchema
 	for _, t := range tokens.Tokens {
-		if t.Secret == state.Secret.ValueString() {
+		if t.Secret == state.Identifier.ValueString() {
 			token = &t
+			state.Secure = types.BoolValue(true)
+			break
+		} else if t.Secret == state.Secret.ValueString() {
+			token = &t
+			state.Secure = types.BoolValue(false)
 			break
 		}
 	}
@@ -221,6 +250,12 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Update model with response
 	state.Secret = types.StringValue(token.Secret)
+
+	if state.Secure.ValueBool() {
+		state.Identifier = types.StringValue(token.Secret)
+	} else {
+		state.Identifier = types.StringNull()
+	}
 	if token.Environment != nil {
 		state.Environment = types.StringValue(*token.Environment)
 	} else {
@@ -276,10 +311,17 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
-	api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
+	if state.Secure.ValueBool() {
+		api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Identifier.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
+		if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+			return
+		}
+	} else {
+		api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
+		if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+			return
+		}
 
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-		return
 	}
 
 	// Set state
@@ -297,13 +339,28 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	api_response, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Secret.ValueString()).Execute()
-
-	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-		return
+	if state.Secure.ValueBool() {
+		apiResponse, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Identifier.ValueString()).Execute()
+		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+			return
+		}
+	} else {
+		apiResponse, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Secret.ValueString()).Execute()
+		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+			return
+		}
 	}
 
 	resp.State.RemoveResource(ctx)
 	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
+}
+
+func extractIdentifier(secret string) (string, bool) {
+	_, rest, found := strings.Cut(secret, ".v2_")
+	if !found {
+		return "", false
+	}
+
+	identifier, _, found := strings.Cut(rest, "_")
+	return identifier, found
 }
