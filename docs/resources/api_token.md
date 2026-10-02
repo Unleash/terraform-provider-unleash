@@ -37,8 +37,10 @@ resource "unleash_api_token" "frontend_token" {
 
 - `environment` (String) An environment the token has access to.
 - `expires_at` (String) When the token expires
+- `identifier` (String) Set if the token uses the new v2 format, used where v1 would use Secret
 - `project` (String, Deprecated) A project the token belongs to.
 - `projects` (Set of String) The list of projects this token has access to. If the token has access to specific projects they will be listed here. If the token has access to all projects it will be represented as `[*]`.
+- `secure` (Boolean) If true the token uses the new v2 format and the full secret will never be returned after the creation call
 - `token_name` (String) The name of the token.
 - `type` (String) The type of the token.
 
