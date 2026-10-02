@@ -172,7 +172,6 @@ func (r *apiTokenResource) Create(ctx context.Context, req resource.CreateReques
 	newState.Type = types.StringValue(token.Type)
 	identifier, found := extractIdentifier(token.Secret)
 	if found {
-		tflog.Debug(ctx, fmt.Sprintf("Found token type v2"))
 		newState.Secure = types.BoolValue(true)
 		newState.Identifier = types.StringValue(identifier)
 	} else {
