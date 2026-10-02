@@ -1,12 +1,14 @@
 package provider
 
 import (
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"os"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccApiTokenResource(t *testing.T) {
+	secure := os.Getenv("SECURE_TOKEN") == "true"
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -26,6 +28,13 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "token_name", "frontend_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "projects.0", "*"),
+					resource.TestCheckResourceAttr("unleash_api_token.frontend_token", "secure", func() string {
+						if secure {
+							return "true"
+						}
+
+						return "false"
+					}()),
 				),
 			},
 			{
@@ -43,6 +52,13 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "token_name", "client_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_token", "secure", func() string {
+						if secure {
+							return "true"
+						}
+
+						return "false"
+					}()),
 				),
 			},
 			{ // test change expire date for previous token
@@ -60,6 +76,13 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "token_name", "client_token"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "environment", "development"),
 					resource.TestCheckResourceAttr("unleash_api_token.client_token", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_token", "secure", func() string {
+						if secure {
+							return "true"
+						}
+
+						return "false"
+					}()),
 				),
 			},
 			{
@@ -76,11 +99,18 @@ func TestAccApiTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "environment", func() string {
 						if v := os.Getenv("DEFAULT_ENVIRONMENT"); v != "" {
 							return v
-						} else {
-							return "development"
 						}
+
+						return "development"
 					}()),
 					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "projects.0", "default"),
+					resource.TestCheckResourceAttr("unleash_api_token.client_no_expire", "secure", func() string {
+						if secure {
+							return "true"
+						}
+
+						return "false"
+					}()),
 				),
 			},
 		},
