@@ -50,6 +50,13 @@ type apiTokenResourceModel struct {
 	Identifier types.String `tfsdk:"identifier"`
 }
 
+func (m apiTokenResourceModel) GetTokenIdentifier() string {
+	if m.Secure.ValueBool() {
+		return m.Identifier.ValueString()
+	}
+	return m.Secret.ValueString()
+}
+
 // Configure adds the provider configured client to the data source.
 func (r *apiTokenResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
@@ -230,6 +237,8 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	var token *unleash.ApiTokenSchema
 	for _, t := range tokens.Tokens {
+		// When v2 tokens are returned from the /api/admin/api-tokens endpoint, the secret field only contains the identifier.
+		// Our state has saved the identifier to the Identifier property. Our state secret field still contains the full token, so terraform can pass this on
 		if t.Secret == state.Identifier.ValueString() {
 			token = &t
 			state.Secure = types.BoolValue(true)
@@ -310,17 +319,9 @@ func (r *apiTokenResource) Update(ctx context.Context, req resource.UpdateReques
 
 	req.State.Get(ctx, &state) // the id is part of the state, not the plan, this is how we get its value
 
-	if state.Secure.ValueBool() {
-		api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Identifier.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
-		if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-			return
-		}
-	} else {
-		api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.Secret.ValueString()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
-		if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
-			return
-		}
-
+	api_response, err := r.client.APITokensAPI.UpdateApiToken(ctx, state.GetTokenIdentifier()).UpdateApiTokenSchema(updateApiTokenSchema).Execute()
+	if !ValidateApiResponse(api_response, 200, &resp.Diagnostics, err) {
+		return
 	}
 
 	// Set state
@@ -338,16 +339,9 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if state.Secure.ValueBool() {
-		apiResponse, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Identifier.ValueString()).Execute()
-		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
-			return
-		}
-	} else {
-		apiResponse, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.Secret.ValueString()).Execute()
-		if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
-			return
-		}
+	apiResponse, err := r.client.APITokensAPI.DeleteApiToken(ctx, state.GetTokenIdentifier()).Execute()
+	if !ValidateApiResponse(apiResponse, 200, &resp.Diagnostics, err) {
+		return
 	}
 
 	resp.State.RemoveResource(ctx)
