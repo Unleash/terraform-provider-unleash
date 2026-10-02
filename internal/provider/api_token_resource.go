@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
+	"regexp"
 	"time"
 
 	unleash "github.com/Unleash/unleash-server-api-go/client"
@@ -355,12 +355,15 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
 }
 
+var tokenPattern = regexp.MustCompile(
+	`\.v2_([A-Za-z0-9_-]{22})_([A-Za-z0-9_-]{43})$`,
+)
+
 func extractIdentifier(secret string) (string, bool) {
-	_, rest, found := strings.Cut(secret, ".v2_")
-	if !found {
+	matches := tokenPattern.FindStringSubmatch(secret)
+	if len(matches) != 3 {
 		return "", false
 	}
 
-	identifier, _, found := strings.Cut(rest, "_")
-	return identifier, found
+	return matches[1], true
 }
