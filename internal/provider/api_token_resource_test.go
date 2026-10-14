@@ -1,11 +1,88 @@
 package provider
 
 import (
+	"context"
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+func TestApiTokenNameRequiresReplacement(t *testing.T) {
+	ctx := context.Background()
+	var schemaResp frameworkresource.SchemaResponse
+	NewApiTokenResource().Schema(ctx, frameworkresource.SchemaRequest{}, &schemaResp)
+	attribute, ok := schemaResp.Schema.Attributes["token_name"].(schema.StringAttribute)
+	if !ok {
+		t.Fatal("token_name must be a string attribute")
+	}
+	if len(attribute.PlanModifiers) == 0 {
+		t.Fatal("token_name must have a replacement plan modifier")
+	}
+
+	for _, tc := range []struct {
+		name            string
+		create          bool
+		destroy         bool
+		unknownName     bool
+		state           string
+		plan            string
+		requiresReplace bool
+	}{
+		{name: "rename", state: "old_token", plan: "new_token", requiresReplace: true},
+		{name: "unchanged", state: "old_token", plan: "old_token"},
+		{name: "creation", plan: "new_token", create: true},
+		{name: "destruction", state: "old_token", destroy: true},
+		{name: "unknown name", state: "old_token", unknownName: true, requiresReplace: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rawType := tftypes.Object{AttributeTypes: map[string]tftypes.Type{"token_name": tftypes.String}}
+			req := planmodifier.StringRequest{
+				Path: path.Root("token_name"),
+				State: tfsdk.State{Raw: tftypes.NewValue(rawType, map[string]tftypes.Value{
+					"token_name": tftypes.NewValue(tftypes.String, tc.state),
+				})},
+				Plan: tfsdk.Plan{Raw: tftypes.NewValue(rawType, map[string]tftypes.Value{
+					"token_name": tftypes.NewValue(tftypes.String, tc.plan),
+				})},
+				StateValue: types.StringValue(tc.state),
+				PlanValue:  types.StringValue(tc.plan),
+			}
+			resp := planmodifier.StringResponse{PlanValue: req.PlanValue}
+			if tc.create {
+				req.State.Raw = tftypes.NewValue(rawType, nil)
+			}
+			if tc.destroy {
+				req.Plan.Raw = tftypes.NewValue(rawType, nil)
+			}
+			if tc.unknownName {
+				req.PlanValue = types.StringUnknown()
+			}
+			for _, modifier := range attribute.PlanModifiers {
+				modifier.PlanModifyString(ctx, req, &resp)
+			}
+			if resp.Diagnostics.HasError() {
+				t.Fatalf("unexpected plan diagnostics: %v", resp.Diagnostics)
+			}
+			if resp.RequiresReplace != tc.requiresReplace {
+				t.Fatalf("RequiresReplace = %t, want %t", resp.RequiresReplace, tc.requiresReplace)
+			}
+			if tc.requiresReplace && resp.Diagnostics.WarningsCount() != 1 {
+				t.Fatal("replacement must warn that the old token will be revoked")
+			}
+			if !tc.requiresReplace && resp.Diagnostics.WarningsCount() != 0 {
+				t.Fatal("creation, destruction, and unchanged names must not produce rename warnings")
+			}
+		})
+	}
+}
 
 func TestAccApiTokenResource(t *testing.T) {
 	secure := os.Getenv("SECURE_TOKEN") == "true"
