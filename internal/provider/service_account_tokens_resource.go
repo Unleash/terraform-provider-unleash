@@ -194,8 +194,6 @@ func (r *serviceAccountTokensResource) Read(ctx context.Context, req resource.Re
 	state.ExpiresAt = types.StringValue(serviceAccountToken.ExpiresAt.Format(time.RFC3339))
 	state.Description = types.StringValue(serviceAccountToken.Description)
 	state.Id = types.Int64Value(int64(serviceAccountToken.Id))
-	state.Secret = types.StringNull() //Can't get the token again, it's only made during creation, so let terraform know it's gone now
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Debug(ctx, "Finished reading service account tokens data source", map[string]interface{}{"success": true})
 }

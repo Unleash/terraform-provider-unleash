@@ -36,6 +36,12 @@ func TestAccServiceAccountTokenResource(t *testing.T) {
 					resource.TestCheckResourceAttr("unleash_service_account_token.token_for_account_test", "expires_at", "2048-01-01T00:00:00Z"),
 				),
 			},
+			{
+				RefreshState: true,
+				Check: resource.TestCheckResourceAttrSet(
+					"unleash_service_account_token.token_for_account_test", "secret",
+				),
+			},
 		},
 	})
 }
