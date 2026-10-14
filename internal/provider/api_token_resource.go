@@ -257,8 +257,8 @@ func (r *apiTokenResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Update model with response
-	// If we're a v2 token, we can't overwrite the state secret (because the response does no longer contain the full secret), so we can't acquire
-	// tokens into our state if using v2, they must be created by Terraform if we want to control them
+	// If we're a v2 token, we can't overwrite the state secret, because the response no longer contains the full secret
+	// so we can't acquire tokens into our state if using v2, they must be created by Terraform if we want to control them
 
 	if state.Secure.ValueBool() {
 		state.Identifier = types.StringValue(token.Secret)
