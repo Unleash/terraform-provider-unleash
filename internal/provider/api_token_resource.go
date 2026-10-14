@@ -9,6 +9,8 @@ import (
 	unleash "github.com/Unleash/unleash-server-api-go/client"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -87,8 +89,13 @@ func (r *apiTokenResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Sensitive:   true,
 			},
 			"token_name": schema.StringAttribute{
-				Description: "The name of the token.",
+				Description: "The name of the token. Changing this value replaces the token and creates a new secret. Deleting the old token revokes its secret; consumers must use the new secret.",
 				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplaceIf(warnTokenNameReplacement,
+						"Changing the token name replaces the token and revokes the old secret when the old token is deleted.",
+						"Changing the token name replaces the token and revokes the old secret when the old token is deleted."),
+				},
 			},
 			"type": schema.StringAttribute{
 				Description: "The type of the token.",
@@ -348,6 +355,12 @@ func (r *apiTokenResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	resp.State.RemoveResource(ctx)
 	tflog.Debug(ctx, "Deleted item resource", map[string]any{"success": true})
+}
+
+func warnTokenNameReplacement(_ context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	resp.RequiresReplace = true
+	resp.Diagnostics.AddAttributeWarning(req.Path, "Token replacement revokes the old secret",
+		"Changing token_name will replace this token. Deleting the old token revokes its secret. Consumers must be updated to use the new token secret.")
 }
 
 var tokenPattern = regexp.MustCompile(
