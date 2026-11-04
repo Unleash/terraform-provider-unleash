@@ -8,9 +8,9 @@
 
 This terraform provider is not intended to support everything in Unleash. The main focus is to support Unleash's initial setup and configuration.
 
-Because [feature flags should be short-lived](https://docs.getunleash.io/topics/feature-flags/short-lived-feature-flags), we do not support managing feature flags through Terraform. Feature flags should be managed directly in Unleash.
+Because [feature flags should be short-lived](https://docs.getunleash.io/topics/feature-flags/short-lived-feature-flags), this provider does not manage how a flag is rolled out. The `unleash_feature` resource only creates a flag and manages its metadata (type, description and impression data), which suits long-lived flags such as kill switches that belong with the infrastructure that uses them. Strategies, variants and whether a flag is enabled in each environment should be managed directly in Unleash. The `unleash_feature` data source reads a flag, including whether it is enabled in each environment.
 
-If you're interested in using Terraform to manage feature flags, you can use [philips-labs/unleash provider](https://registry.terraform.io/providers/philips-labs/unleash/latest/docs) that supports managing feature flags.
+If you're interested in using Terraform to manage the full configuration of feature flags, you can use [philips-labs/unleash provider](https://registry.terraform.io/providers/philips-labs/unleash/latest/docs).
 
 Note that some resources are only available for the enterprise version of Unleash.
 
